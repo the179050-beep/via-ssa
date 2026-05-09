@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Clock, MapPin, Phone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { Link } from "react-router-dom";
 
 const AnimatedElement = ({ children, className, delay = 0 }) => {
   const ref = useRef(null);
@@ -247,14 +248,23 @@ export default function Dine() {
               احجز طاولتك اليوم
             </h2>
             <p className="text-muted-foreground mb-8">للحجوزات والاستفسارات، تواصل معنا مباشرة</p>
-            <a
-              href="mailto:info@viariyadh.com"
-              className="relative overflow-hidden inline-flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 text-sm tracking-wide hover:opacity-90 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.5)]"
-            >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
-              <span className="relative">تواصل معنا</span>
-              <Phone className="w-4 h-4 relative" />
-            </a>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link
+                to="/Booking"
+                className="relative overflow-hidden inline-flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 text-sm tracking-wide hover:opacity-90 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_15px_40px_-10px_hsl(var(--primary)/0.5)]"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                <span className="relative">احجز الآن</span>
+                <ArrowLeft className="w-4 h-4 relative" />
+              </Link>
+              <a
+                href="mailto:info@viariyadh.com"
+                className="inline-flex items-center gap-3 border border-primary text-primary px-8 py-4 text-sm tracking-wide hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+              >
+                <span>تواصل معنا</span>
+                <Phone className="w-4 h-4" />
+              </a>
+            </div>
           </div>
         </section>
       </AnimatedElement>

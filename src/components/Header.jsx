@@ -113,7 +113,7 @@ export default function Header() {
                   {[
                     { label: "احجز خدمة", to: "#" },
                     { label: "احجز إقامتك", to: "#" },
-                    { label: "احجز مطعم", to: "/Dine" },
+                    { label: "احجز مطعم", to: "/Booking" },
                     { label: "احجز سينما", to: "#" }
                   ].map((link, idx) => (
                     <Link
