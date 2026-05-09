@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Calendar, Clock, Users, Phone, Mail, User,
-  CheckCircle, Hotel, ChevronDown, CreditCard, Lock, ChevronLeft
+  CheckCircle, Hotel, ChevronDown, CreditCard, Lock, ChevronLeft,
+  MessageSquare, RefreshCw
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
@@ -21,11 +22,13 @@ const timeSlots = [
 ];
 
 const today = new Date().toISOString().split("T")[0];
-
 const inputClass = "w-full bg-background border border-border/50 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors duration-200 placeholder:text-muted-foreground/40";
 const labelClass = "text-muted-foreground text-xs tracking-widest uppercase block mb-2 font-medium";
 
-const STEPS = ["تفاصيل الحجز", "بيانات الدفع"];
+const STEPS = ["تفاصيل الحجز", "التحقق", "بيانات الدفع"];
+
+// Simulated OTP (in real app this would come from backend)
+const DEMO_OTP = "1234";
 
 function StepLoader() {
   return (
@@ -46,6 +49,59 @@ function StepLoader() {
   );
 }
 
+function OtpInput({ value, onChange, hasError }) {
+  const inputs = useRef([]);
+  const digits = value.split("");
+
+  const handleKey = (e, i) => {
+    if (e.key === "Backspace") {
+      const next = [...digits];
+      if (next[i]) { next[i] = ""; onChange(next.join("")); }
+      else if (i > 0) { next[i - 1] = ""; onChange(next.join("")); inputs.current[i - 1]?.focus(); }
+    }
+  };
+
+  const handleChange = (e, i) => {
+    const val = e.target.value.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[i] = val;
+    onChange(next.join(""));
+    if (val && i < 3) inputs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    onChange(pasted.padEnd(4, "").slice(0, 4));
+    inputs.current[Math.min(pasted.length, 3)]?.focus();
+    e.preventDefault();
+  };
+
+  return (
+    <div className="flex gap-3 justify-center" dir="ltr">
+      {[0, 1, 2, 3].map(i => (
+        <input
+          key={i}
+          ref={el => inputs.current[i] = el}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={digits[i] || ""}
+          onChange={e => handleChange(e, i)}
+          onKeyDown={e => handleKey(e, i)}
+          onPaste={handlePaste}
+          className={`w-14 h-16 text-center text-2xl font-mono border-2 bg-background text-foreground focus:outline-none transition-all duration-200 ${
+            hasError
+              ? "border-red-500/70 bg-red-500/5"
+              : digits[i]
+              ? "border-primary text-primary"
+              : "border-border/50 focus:border-primary"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function Booking() {
   const [step, setStep] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
@@ -55,11 +111,48 @@ export default function Booking() {
     email: "", date: "", time: "", guests_count: 2, notes: "",
   });
   const [payment, setPayment] = useState({ card_name: "", card_number: "", expiry: "", cvv: "" });
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const setP = (k, v) => setPayment(p => ({ ...p, [k]: v }));
+
+  const goTo = (s) => {
+    setTransitioning(true);
+    setTimeout(() => { setStep(s); setTransitioning(false); }, 800);
+  };
+
+  const sendOtp = () => {
+    setOtpSent(true);
+    setOtp("");
+    setOtpError(false);
+    setResendTimer(30);
+  };
+
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const t = setTimeout(() => setResendTimer(r => r - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [resendTimer]);
+
+  // When entering OTP step, auto-send
+  useEffect(() => {
+    if (step === 1 && !otpSent) sendOtp();
+  }, [step]);
+
+  const verifyOtp = () => {
+    if (otp === DEMO_OTP) {
+      setOtpError(false);
+      goTo(2);
+    } else {
+      setOtpError(true);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,6 +168,12 @@ export default function Booking() {
   };
 
   const canProceed = form.venue_name && form.guest_name && form.phone && form.date && form.time;
+
+  const resetAll = () => {
+    setSubmitted(false); setStep(0); setOtp(""); setOtpSent(false); setOtpError(false);
+    setForm({ venue_name: "", guest_name: "", phone: "", email: "", date: "", time: "", guests_count: 2, notes: "" });
+    setPayment({ card_name: "", card_number: "", expiry: "", cvv: "" });
+  };
 
   return (
     <div className="bg-background text-foreground min-h-screen" dir="rtl">
@@ -119,10 +218,7 @@ export default function Booking() {
                   <CheckCircle className="w-10 h-10 text-primary" />
                 </div>
                 <span className="text-primary text-xs tracking-[0.3em] uppercase block mb-4">تأكيد الحجز</span>
-                <h2
-                  className="text-foreground text-3xl font-bold mb-4"
-                  style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}
-                >
+                <h2 className="text-foreground text-3xl font-bold mb-4" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
                   تم استلام طلبك بنجاح
                 </h2>
                 <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
@@ -145,16 +241,12 @@ export default function Booking() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 justify-center">
-                  <button
-                    onClick={() => { setSubmitted(false); setStep(0); setForm({ venue_name: "", guest_name: "", phone: "", email: "", date: "", time: "", guests_count: 2, notes: "" }); setPayment({ card_name: "", card_number: "", expiry: "", cvv: "" }); }}
-                    className="border border-primary/40 text-primary px-7 py-3 text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                  >
+                  <button onClick={resetAll}
+                    className="border border-primary/40 text-primary px-7 py-3 text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                     حجز جديد
                   </button>
-                  <Link
-                    to="/Dine"
-                    className="bg-primary text-primary-foreground px-7 py-3 text-xs tracking-widest uppercase hover:opacity-90 transition-opacity inline-flex items-center gap-2"
-                  >
+                  <Link to="/Dine"
+                    className="bg-primary text-primary-foreground px-7 py-3 text-xs tracking-widest uppercase hover:opacity-90 transition-opacity inline-flex items-center gap-2">
                     <span>المطاعم</span>
                     <ArrowLeft className="w-3.5 h-3.5" />
                   </Link>
@@ -167,7 +259,7 @@ export default function Booking() {
                 <div className="flex items-center gap-0">
                   {STEPS.map((s, i) => (
                     <div key={i} className="flex items-center flex-1">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 shrink-0">
                         <div className={`w-8 h-8 flex items-center justify-center text-xs font-bold border transition-all duration-300 ${
                           i < step ? "bg-primary border-primary text-primary-foreground" :
                           i === step ? "border-primary text-primary" :
@@ -175,12 +267,12 @@ export default function Booking() {
                         }`}>
                           {i < step ? "✓" : i + 1}
                         </div>
-                        <span className={`text-xs tracking-widest uppercase transition-colors duration-300 ${i === step ? "text-primary" : "text-muted-foreground"}`}>
+                        <span className={`text-xs tracking-widest uppercase transition-colors duration-300 hidden sm:block ${i === step ? "text-primary" : "text-muted-foreground"}`}>
                           {s}
                         </span>
                       </div>
                       {i < STEPS.length - 1 && (
-                        <div className="flex-1 h-px mx-4 bg-border/30 relative overflow-hidden">
+                        <div className="flex-1 h-px mx-3 bg-border/30 relative overflow-hidden">
                           <motion.div
                             className="absolute inset-y-0 left-0 bg-primary/60"
                             initial={false}
@@ -198,50 +290,34 @@ export default function Booking() {
 
                   {/* ── STEP 0: Booking Details ── */}
                   {!transitioning && step === 0 && (
-                    <motion.div
-                      key="step0"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.35 }}
-                      className="space-y-6"
-                    >
+                    <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }} className="space-y-6">
                       {/* Type Toggle */}
                       <div className="grid grid-cols-2 gap-3">
                         {[
                           { value: "restaurant", label: "حجز مطعم", icon: <UtensilsCrossed className="w-5 h-5" /> },
                           { value: "hotel", label: "حجز فندق", icon: <Hotel className="w-5 h-5" /> },
                         ].map(opt => (
-                          <button
-                            key={opt.value}
-                            type="button"
+                          <button key={opt.value} type="button"
                             onClick={() => { setBookingType(opt.value); setF("venue_name", ""); }}
                             className={`flex items-center justify-center gap-3 py-5 border transition-all duration-300 text-sm tracking-wide ${
                               bookingType === opt.value
                                 ? "border-primary bg-primary/8 text-primary"
                                 : "border-border/30 text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                            }`}
-                          >
+                            }`}>
                             {opt.icon}
                             <span style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>{opt.label}</span>
                           </button>
                         ))}
                       </div>
 
-                      {/* Card */}
                       <div className="border border-border/25 bg-secondary divide-y divide-border/20">
-
-                        {/* Section: Venue */}
+                        {/* Venue */}
                         <div className="p-6">
                           <p className="text-primary text-xs tracking-[0.25em] uppercase mb-4">الوجهة</p>
                           {bookingType === "restaurant" ? (
                             <div className="relative">
-                              <select
-                                required
-                                value={form.venue_name}
-                                onChange={e => setF("venue_name", e.target.value)}
-                                className={inputClass + " appearance-none"}
-                              >
+                              <select required value={form.venue_name} onChange={e => setF("venue_name", e.target.value)}
+                                className={inputClass + " appearance-none"}>
                                 <option value="">اختر المطعم</option>
                                 {restaurants.map(r => <option key={r} value={r}>{r}</option>)}
                               </select>
@@ -255,7 +331,7 @@ export default function Booking() {
                           )}
                         </div>
 
-                        {/* Section: Guest Info */}
+                        {/* Guest Info */}
                         <div className="p-6 space-y-4">
                           <p className="text-primary text-xs tracking-[0.25em] uppercase mb-4">بيانات الضيف</p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -277,7 +353,7 @@ export default function Booking() {
                           </div>
                         </div>
 
-                        {/* Section: Date / Time / Guests */}
+                        {/* Date / Time / Guests */}
                         <div className="p-6 space-y-4">
                           <p className="text-primary text-xs tracking-[0.25em] uppercase mb-4">التاريخ والوقت</p>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -310,7 +386,7 @@ export default function Booking() {
                           </div>
                         </div>
 
-                        {/* Section: Notes */}
+                        {/* Notes */}
                         <div className="p-6">
                           <label className={labelClass}>ملاحظات خاصة <span className="normal-case text-muted-foreground/50">(اختياري)</span></label>
                           <textarea rows={3} value={form.notes} onChange={e => setF("notes", e.target.value)}
@@ -319,31 +395,80 @@ export default function Booking() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        disabled={!canProceed}
-                        onClick={() => { setTransitioning(true); setTimeout(() => { setStep(1); setTransitioning(false); }, 900); }}
-                        className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                      >
+                      <button type="button" disabled={!canProceed}
+                        onClick={() => goTo(1)}
+                        className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
-                        <span className="relative">المتابعة للدفع</span>
+                        <span className="relative">التحقق من الهوية</span>
                         <ArrowLeft className="w-4 h-4 relative" />
                       </button>
                     </motion.div>
                   )}
 
-                  {/* ── STEP 1: Payment ── */}
+                  {/* ── STEP 1: OTP ── */}
                   {!transitioning && step === 1 && (
-                    <motion.form
-                      key="step1"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.35 }}
-                      onSubmit={handleSubmit}
-                      className="space-y-6"
-                    >
-                      {/* Booking Summary */}
+                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}
+                      className="space-y-6">
+                      <div className="border border-border/25 bg-secondary">
+                        <div className="px-6 pt-8 pb-6 text-center border-b border-border/20">
+                          <div className="w-16 h-16 rounded-full border border-primary/30 bg-primary/5 flex items-center justify-center mx-auto mb-5">
+                            <MessageSquare className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-foreground text-xl font-bold mb-2" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
+                            التحقق من رقم الجوال
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+                            تم إرسال رمز التحقق المكوّن من 4 أرقام إلى
+                          </p>
+                          <p className="text-primary font-semibold text-sm mt-1" dir="ltr">{form.phone}</p>
+                          <p className="text-muted-foreground/40 text-xs mt-3">(للتجربة: الرمز هو <span className="text-primary/70 font-mono">1234</span>)</p>
+                        </div>
+
+                        <div className="p-8 space-y-6">
+                          <OtpInput value={otp} onChange={v => { setOtp(v); setOtpError(false); }} hasError={otpError} />
+
+                          <AnimatePresence>
+                            {otpError && (
+                              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                className="text-red-400 text-xs text-center tracking-wide">
+                                الرمز غير صحيح، يرجى المحاولة مجدداً
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+
+                          <button type="button" onClick={verifyOtp} disabled={otp.length < 4}
+                            className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                            <span className="relative">تأكيد الرمز</span>
+                            <ArrowLeft className="w-4 h-4 relative" />
+                          </button>
+
+                          <div className="flex items-center justify-center gap-3 pt-1">
+                            <span className="text-muted-foreground text-xs">لم يصلك الرمز؟</span>
+                            {resendTimer > 0 ? (
+                              <span className="text-primary/60 text-xs font-mono" dir="ltr">00:{String(resendTimer).padStart(2, "0")}</span>
+                            ) : (
+                              <button type="button" onClick={sendOtp}
+                                className="text-primary text-xs flex items-center gap-1 hover:underline underline-offset-4 transition-all">
+                                <RefreshCw className="w-3 h-3" /> إعادة الإرسال
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button type="button" onClick={() => goTo(0)}
+                        className="w-full border border-border/40 text-muted-foreground py-3 text-xs tracking-widest uppercase hover:border-primary/50 hover:text-primary transition-all duration-300 flex items-center justify-center gap-2">
+                        <ChevronLeft className="w-3.5 h-3.5" /> العودة
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {/* ── STEP 2: Payment ── */}
+                  {!transitioning && step === 2 && (
+                    <motion.form key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}
+                      onSubmit={handleSubmit} className="space-y-6">
+                      {/* Summary */}
                       <div className="border border-primary/20 bg-primary/5 px-6 py-5 flex flex-wrap gap-6 items-center justify-between">
                         <div>
                           <div className="text-muted-foreground text-xs tracking-widest uppercase mb-1">الوجهة</div>
@@ -361,8 +486,8 @@ export default function Booking() {
                           <div className="text-muted-foreground text-xs tracking-widest uppercase mb-1">الضيوف</div>
                           <div className="text-foreground text-sm font-semibold">{form.guests_count} أشخاص</div>
                         </div>
-                        <button type="button" onClick={() => { setTransitioning(true); setTimeout(() => { setStep(0); setTransitioning(false); }, 900); }}
-                          className="text-primary text-xs underline underline-offset-4 hover:no-underline transition-all flex items-center gap-1">
+                        <button type="button" onClick={() => goTo(0)}
+                          className="text-primary text-xs underline underline-offset-4 hover:no-underline flex items-center gap-1">
                           <ChevronLeft className="w-3 h-3" /> تعديل
                         </button>
                       </div>
@@ -381,8 +506,8 @@ export default function Booking() {
                         </div>
 
                         <div className="p-6 space-y-4">
-                          {/* Card preview strip */}
-                          <div className="bg-gradient-to-br from-muted to-background border border-border/30 rounded-none p-5 flex justify-between items-end mb-6" dir="ltr">
+                          {/* Card preview */}
+                          <div className="bg-gradient-to-br from-muted to-background border border-border/30 p-5 flex justify-between items-end mb-6" dir="ltr">
                             <div>
                               <div className="text-muted-foreground text-[10px] tracking-widest uppercase mb-2">Card Number</div>
                               <div className="text-foreground text-base font-mono tracking-[0.2em]">
@@ -395,7 +520,6 @@ export default function Booking() {
                             </div>
                           </div>
 
-                          {/* Cardholder */}
                           <div>
                             <label className={labelClass}>اسم حامل البطاقة</label>
                             <input required type="text" value={payment.card_name}
@@ -404,7 +528,6 @@ export default function Booking() {
                               className={inputClass + " font-mono tracking-wider"} dir="ltr" />
                           </div>
 
-                          {/* Card Number */}
                           <div>
                             <label className={labelClass}>رقم البطاقة</label>
                             <div className="relative">
@@ -420,7 +543,6 @@ export default function Booking() {
                             </div>
                           </div>
 
-                          {/* Expiry + CVV */}
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className={labelClass}>تاريخ الانتهاء</label>
@@ -444,7 +566,6 @@ export default function Booking() {
                             </div>
                           </div>
 
-                          {/* Accepted cards */}
                           <div className="flex items-center gap-2 pt-2">
                             <span className="text-muted-foreground text-xs ml-2">نقبل:</span>
                             {[
@@ -459,11 +580,9 @@ export default function Booking() {
                         </div>
                       </div>
 
-                      <button
-                        type="submit"
+                      <button type="submit"
                         disabled={loading || !payment.card_name || !payment.card_number || !payment.expiry || !payment.cvv}
-                        className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                      >
+                        className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
                         <Lock className="w-3.5 h-3.5 relative" />
                         <span className="relative">{loading ? "جاري المعالجة..." : "تأكيد الحجز والدفع"}</span>
