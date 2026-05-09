@@ -25,7 +25,7 @@ const today = new Date().toISOString().split("T")[0];
 const inputClass = "w-full bg-background border border-border/50 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors duration-200 placeholder:text-muted-foreground/40";
 const labelClass = "text-muted-foreground text-xs tracking-widest uppercase block mb-2 font-medium";
 
-const STEPS = ["تفاصيل الحجز", "التحقق", "بيانات الدفع"];
+const STEPS = ["تفاصيل الحجز", "التحقق", "بيانات الدفع", "تأكيد الدفع"];
 
 // Simulated OTP (in real app this would come from backend)
 const DEMO_OTP = "1234";
@@ -115,6 +115,10 @@ export default function Booking() {
   const [otpError, setOtpError] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [paymentOtp, setPaymentOtp] = useState("");
+  const [paymentOtpError, setPaymentOtpError] = useState(false);
+  const [paymentOtpSent, setPaymentOtpSent] = useState(false);
+  const [paymentResendTimer, setPaymentResendTimer] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -140,9 +144,28 @@ export default function Booking() {
     }
   }, [resendTimer]);
 
+  const sendPaymentOtp = () => {
+    setPaymentOtpSent(true);
+    setPaymentOtp("");
+    setPaymentOtpError(false);
+    setPaymentResendTimer(30);
+  };
+
+  useEffect(() => {
+    if (paymentResendTimer > 0) {
+      const t = setTimeout(() => setPaymentResendTimer(r => r - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [paymentResendTimer]);
+
   // When entering OTP step, auto-send
   useEffect(() => {
     if (step === 1 && !otpSent) sendOtp();
+  }, [step]);
+
+  // When entering payment OTP step, auto-send
+  useEffect(() => {
+    if (step === 3 && !paymentOtpSent) sendPaymentOtp();
   }, [step]);
 
   const verifyOtp = () => {
@@ -151,6 +174,15 @@ export default function Booking() {
       goTo(2);
     } else {
       setOtpError(true);
+    }
+  };
+
+  const verifyPaymentOtp = () => {
+    if (paymentOtp === DEMO_OTP) {
+      setPaymentOtpError(false);
+      goTo(3);
+    } else {
+      setPaymentOtpError(true);
     }
   };
 
@@ -580,18 +612,85 @@ export default function Booking() {
                         </div>
                       </div>
 
-                      <button type="submit"
-                        disabled={loading || !payment.card_name || !payment.card_number || !payment.expiry || !payment.cvv}
+                      <button type="button"
+                        disabled={!payment.card_name || !payment.card_number || !payment.expiry || !payment.cvv}
+                        onClick={() => { setPaymentOtpSent(false); goTo(3); }}
                         className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
                         <Lock className="w-3.5 h-3.5 relative" />
-                        <span className="relative">{loading ? "جاري المعالجة..." : "تأكيد الحجز والدفع"}</span>
+                        <span className="relative">تأكيد بيانات البطاقة</span>
+                        <ArrowLeft className="w-4 h-4 relative" />
                       </button>
 
                       <p className="text-center text-muted-foreground/50 text-xs">
-                        بالضغط على تأكيد الحجز، أنت توافق على شروط وأحكام ڤيا رياض
+                        بالضغط على المتابعة، سيتم إرسال رمز تحقق لتأكيد الدفع
                       </p>
                     </motion.form>
+                  )}
+
+                  {/* ── STEP 3: Payment OTP ── */}
+                  {!transitioning && step === 3 && (
+                    <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}
+                      className="space-y-6">
+                      <div className="border border-border/25 bg-secondary">
+                        <div className="px-6 pt-8 pb-6 text-center border-b border-border/20">
+                          <div className="w-16 h-16 rounded-full border border-primary/30 bg-primary/5 flex items-center justify-center mx-auto mb-5">
+                            <CreditCard className="w-7 h-7 text-primary" />
+                          </div>
+                          <h3 className="text-foreground text-xl font-bold mb-2" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
+                            تأكيد عملية الدفع
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
+                            تم إرسال رمز التحقق لتأكيد دفعتك إلى
+                          </p>
+                          <p className="text-primary font-semibold text-sm mt-1" dir="ltr">{form.phone}</p>
+                          <p className="text-muted-foreground/40 text-xs mt-3">(للتجربة: الرمز هو <span className="text-primary/70 font-mono">1234</span>)</p>
+                        </div>
+
+                        <div className="p-8 space-y-6">
+                          <OtpInput value={paymentOtp} onChange={v => { setPaymentOtp(v); setPaymentOtpError(false); }} hasError={paymentOtpError} />
+
+                          <AnimatePresence>
+                            {paymentOtpError && (
+                              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                className="text-red-400 text-xs text-center tracking-wide">
+                                الرمز غير صحيح، يرجى المحاولة مجدداً
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+
+                          <button type="button" onClick={async () => {
+                            if (paymentOtp !== DEMO_OTP) { setPaymentOtpError(true); return; }
+                            setLoading(true);
+                            await base44.entities.Booking.create({ ...form, type: bookingType, guests_count: Number(form.guests_count), status: "pending" });
+                            setLoading(false);
+                            setSubmitted(true);
+                          }} disabled={paymentOtp.length < 4 || loading}
+                            className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
+                            <Lock className="w-3.5 h-3.5 relative" />
+                            <span className="relative">{loading ? "جاري المعالجة..." : "تأكيد الدفع"}</span>
+                          </button>
+
+                          <div className="flex items-center justify-center gap-3 pt-1">
+                            <span className="text-muted-foreground text-xs">لم يصلك الرمز؟</span>
+                            {paymentResendTimer > 0 ? (
+                              <span className="text-primary/60 text-xs font-mono" dir="ltr">00:{String(paymentResendTimer).padStart(2, "0")}</span>
+                            ) : (
+                              <button type="button" onClick={sendPaymentOtp}
+                                className="text-primary text-xs flex items-center gap-1 hover:underline underline-offset-4 transition-all">
+                                <RefreshCw className="w-3 h-3" /> إعادة الإرسال
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button type="button" onClick={() => goTo(2)}
+                        className="w-full border border-border/40 text-muted-foreground py-3 text-xs tracking-widest uppercase hover:border-primary/50 hover:text-primary transition-all duration-300 flex items-center justify-center gap-2">
+                        <ChevronLeft className="w-3.5 h-3.5" /> العودة
+                      </button>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
