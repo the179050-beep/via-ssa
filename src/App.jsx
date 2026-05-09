@@ -10,6 +10,7 @@ import Dine from './pages/Dine';
 import Stay from './pages/Stay.jsx';
 import Booking from './pages/Booking';
 import Cinema from './pages/Cinema';
+import Dashboard from './pages/Dashboard';
 import Layout from './components/Layout';
 // Add page imports here
 
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
         <Route path="/Stay" element={<Stay />} />
         <Route path="/Booking" element={<Booking />} />
         <Route path="/Cinema" element={<Cinema />} />
+        <Route path="/Dashboard" element={<Dashboard />} />
         {/* Add your page Route elements here */}
       </Route>
       <Route path="*" element={<PageNotFound />} />
