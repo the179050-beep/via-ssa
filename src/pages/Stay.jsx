@@ -155,10 +155,8 @@ function RoomDetailSection() {
             <p className="text-muted-foreground text-sm leading-relaxed mb-8">
               استمتع بخدمة الباتلر الشخصية وامتيازات حصرية للنزلاء ضمن تجربة لا مثيل لها في الرياض.
             </p>
-            <a
-              href="https://www.marriott.com/en-us/hotels/ruhxr-the-st-regis-riyadh/overview/"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/Booking"
               className="inline-flex items-stretch bg-background/50 border border-primary/30 hover:border-primary transition-colors duration-500 group self-start"
             >
               <span className="flex items-center px-5 text-sm font-bold tracking-widest text-foreground group-hover:text-primary transition-colors" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
@@ -168,7 +166,7 @@ function RoomDetailSection() {
                 <ArrowLeft className="w-4 h-4 text-primary group-hover:text-primary-foreground transform translate-x-6 group-hover:translate-x-0 transition-transform duration-500 absolute" />
                 <ArrowLeft className="w-4 h-4 text-primary group-hover:text-primary-foreground transform translate-x-0 group-hover:-translate-x-6 transition-transform duration-500" />
               </div>
-            </a>
+            </Link>
           </div>
         </AnimatedElement>
 
