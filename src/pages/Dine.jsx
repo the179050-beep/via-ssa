@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Clock, MapPin, Phone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const AnimatedElement = ({ children, className, delay = 0 }) => {
   const ref = useRef(null);
@@ -133,6 +133,7 @@ const restaurants = [
 ];
 
 export default function Dine() {
+  const navigate = useNavigate();
   return (
     <div className="bg-background text-foreground" dir="rtl">
       {/* Hero */}
@@ -222,12 +223,13 @@ export default function Dine() {
                         {r.floor && <span className="text-card-foreground/60 text-xs flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" />{r.floor}</span>}
                         {r.phone && <span className="text-card-foreground/60 text-xs flex items-center gap-1"><Phone className="w-3 h-3 shrink-0" />{r.phone}</span>}
                       </div>
-                      {r.booking_url && (
-                        <a href={r.booking_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm border border-primary/40 px-4 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all duration-300 inline-flex items-center gap-2">
-                          <span>احجز الآن</span>
-                          <ArrowLeft className="w-3 h-3" />
-                        </a>
-                      )}
+                      <button
+                        onClick={() => navigate(`/Booking?type=restaurant&restaurant=${encodeURIComponent(r.name)}`)}
+                        className="text-primary text-sm border border-primary/40 px-4 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all duration-300 inline-flex items-center gap-2"
+                      >
+                        <span>احجز الآن</span>
+                        <ArrowLeft className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
                 </AnimatedElement>
