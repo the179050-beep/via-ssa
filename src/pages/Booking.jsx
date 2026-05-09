@@ -243,24 +243,23 @@ export default function Booking() {
 
                   {/* Time Slots */}
                   <div>
-                    <label className="text-foreground text-sm font-semibold block mb-3 flex items-center gap-1.5">
+                    <label className="text-foreground text-sm font-semibold block mb-2 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-primary" /> الوقت المفضل
                     </label>
-                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                      {timeSlots.map(t => (
-                        <button
-                          key={t}
-                          type="button"
-                          onClick={() => set("time", t)}
-                          className={`py-2 text-xs border transition-all duration-200 ${
-                            form.time === t
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border/40 text-muted-foreground hover:border-primary/60 hover:text-foreground"
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
+                    <div className="relative">
+                      <select
+                        required
+                        value={form.time}
+                        onChange={e => set("time", e.target.value)}
+                        className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm appearance-none focus:outline-none focus:border-primary transition-colors"
+                        dir="ltr"
+                      >
+                        <option value="">-- اختر الوقت --</option>
+                        {timeSlots.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
                   </div>
 
