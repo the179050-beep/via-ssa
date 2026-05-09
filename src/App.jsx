@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from './pages/Home';
 import Dine from './pages/Dine';
-import Stay from './pages/Stay';
+import Stay from './pages/Stay.jsx';
 import Booking from './pages/Booking';
 import Layout from './components/Layout';
 // Add page imports here
