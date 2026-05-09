@@ -432,7 +432,7 @@ export default function Booking() {
                             <img
                               src="https://media.base44.com/images/public/69ffa3030b658fe6093efead/b01f63ac5_cards.png"
                               alt="طرق الدفع المقبولة"
-                              className="h-10 w-auto object-contain opacity-90"
+                              className="h-10 w-auto object-contain opacity-90 bg-white rounded px-2 py-1"
                             />
                           </div>
                         </div>
