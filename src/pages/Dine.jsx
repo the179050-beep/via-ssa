@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Star, Clock, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, Clock, MapPin, Phone } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 const AnimatedElement = ({ children, className, delay = 0 }) => {
@@ -27,40 +27,107 @@ const AnimatedElement = ({ children, className, delay = 0 }) => {
 
 const restaurants = [
   {
-    name: "مطعم النخيل",
-    cuisine: "مطبخ سعودي عالمي",
-    description: "تجربة طهي استثنائية تجمع بين النكهات السعودية الأصيلة والمطبخ العالمي الراقي.",
-    hours: "١٢:٠٠ - ٢٣:٠٠",
-    image_url: "https://media.base44.com/images/public/69ffa3030b658fe6093efead/4ddb85a07_www_viariyadh_com_explore_desktop_dine_60eba179ba_53d63d1d4c_a9c7513a.webp",
-    rating: 5,
-    tag: "مميز"
+    name: "اوڤر اندر",
+    cuisine: "مقهى",
+    description: "انضم إلينا في أوفر أندر! استمتع بقائمتنا المختارة من أشهى المأكولات والمشروبات في أجواء عصرية مميزة.",
+    hours: "يومياً: 12:00 PM - 01:00 AM",
+    image_url: "https://strapi.viariyadh.com/uploads/ARV_07479_cc0384c044_752cb326ac.webp",
+    tag: "متاح حالياً",
+    booking_url: "https://www.sevenrooms.com/reservations/overunderriyadh/via-riyadh-website",
+    floor: "الطابق الأرضي السفلي",
+    phone: "+966114516483"
   },
   {
-    name: "مطعم الواحة",
-    cuisine: "مأكولات بحرية",
-    description: "أطازج المأكولات البحرية المحضرة بأرقى الأساليب في أجواء تحاكي جمال الطبيعة.",
-    hours: "١٣:٠٠ - ٢٤:٠٠",
-    image_url: "https://media.base44.com/images/public/69ffa3030b658fe6093efead/f05b64c4c_www_viariyadh_com_Deluxe_Double_Room_40e249cc77_83195fa0.jpg",
-    rating: 5,
-    tag: "جديد"
+    name: "بيرنجاك",
+    cuisine: "مطبخ فارسي",
+    description: "في بيرنجاك البداية دايم تكون مع ريحة البهارات الفارسية والكباب على الفحم، وبعدها طاولة مليانة أطباق تستاهل التجربة. حياكم… طاولتكم جاهزة.",
+    hours: "الأحد - الأربعاء: 6م - 1ص | الخميس - السبت: 1م - 1ص",
+    image_url: "https://strapi.viariyadh.com/uploads/BERENJAK_24_F_and_B_5_9251230f25.jpg",
+    tag: "",
+    booking_url: "https://www.sevenrooms.com/explore/berenjakriyadh/reservations/create/search?tracking=via-riyadh-website",
+    phone: "+966114516483"
   },
   {
-    name: "بيسترو لومير",
-    cuisine: "مطبخ فرنسي",
-    description: "ذوق الطراز الباريسي الأصيل في قلب الرياض مع قائمة طعام مستوحاة من باريس.",
-    hours: "١٢:٠٠ - ٢٣:٣٠",
-    image_url: "https://media.base44.com/images/public/69ffa3030b658fe6093efead/19d10f500_www_viariyadh_com_DSC_01376_f086307239_832682df.jpg",
-    rating: 4,
-    tag: ""
+    name: "جيم خانا",
+    cuisine: "مطاعم راقية - مطبخ هندي",
+    description: "إفطار وسحور بنكهات هندية تقليدية ضمن أجواء عائلية. تجربة فريدة من نوعها في قلب الرياض.",
+    hours: "الخميس - السبت: 01:00 PM - 12:00 AM | السحور: حتى 2:00 صباحًا",
+    image_url: "https://strapi.viariyadh.com/uploads/Freddyhcreator_11_28_2023_GYMKHANA_176_374ce8907e_213f2e0d6a.webp",
+    tag: "متاح حالياً",
+    booking_url: "https://www.sevenrooms.com/reservations/gymkhanariyadh/via-riyadh-website",
+    floor: "الطابق الأرضي السفلي",
+    phone: "+966114516483"
   },
   {
-    name: "كاياكو",
-    cuisine: "مطبخ ياباني",
-    description: "فن الطهي الياباني على أعلى مستوى مع أرقى أنواع السوشي والمأكولات اليابانية.",
-    hours: "١٢:٠٠ - ٢٣:٠٠",
-    image_url: "https://media.base44.com/images/public/69ffa3030b658fe6093efead/af5704e90_www_viariyadh_com_Our_heritage_ace712fb87_f692a56b2f_964e66dd.webp",
-    rating: 5,
-    tag: ""
+    name: "ستيلا سكاي لاونج",
+    cuisine: "مطاعم راقية",
+    description: "استمتع بتجربة لا مثيل لها في الهواء الطلق، حيث يمكنك الاستمتاع بالمناظر البانورامية لڤيا رياض والمساحات الخضراء. اكتشف مزيجًا استثنائيًا من الطعام والترفيه تحت النجوم.",
+    hours: "يوميًا: 18:00 - 02:00",
+    image_url: "https://strapi.viariyadh.com/uploads/Stella_Sky_Lounge_RUXHR_1856_f0e740cbe9.jpg",
+    tag: "",
+    booking_url: "https://maps.app.goo.gl/1MF4rrBXF8zM7mW66",
+    floor: "الطابق الثالث"
+  },
+  {
+    name: "سدس",
+    cuisine: "كاجوال - مساحة عمل اجتماعية",
+    description: "صالون Salon Social Hub by Sudds مساحة ثقافية وإبداعية فاخرة في الرياض تمزج بين العمل، الترفيه، الطعام، والفن في وجهة واحدة يقودها المجتمع.",
+    hours: "يوميًا: 09:00 ص - 12:00 ص",
+    image_url: "https://strapi.viariyadh.com/uploads/Sudds_eb3fdaade3.png",
+    tag: "",
+    booking_url: "https://wddk.sa/r/Salon-Sudds@116",
+    phone: "050 524 5507"
+  },
+  {
+    name: "فيردي",
+    cuisine: "كاجوال",
+    description: "إفطار وسحور بأسلوب بسيط في أجواء هادئة. مطعم كاجوال بلمسة فرنسية في قلب ڤيا رياض.",
+    hours: "يومياً: 01:00 PM - 01:00 AM",
+    image_url: "https://strapi.viariyadh.com/uploads/Freddyhcreator_05_03_2023_FERDI_194_9c955d26db.jpg",
+    tag: "متاح حالياً",
+    booking_url: "https://www.sevenrooms.com/reservations/ferdiriyadh/via-riyadh-website",
+    floor: "الطابق الأرضي",
+    phone: "+966114516483"
+  },
+  {
+    name: "فيقا سيجار لاونج",
+    cuisine: "صالة سيجار - عضوية",
+    description: "تفضل بزيارة مانوه سيجار لاونج، الملاذ الهادئ. اجتمع مع الأحباء والأصدقاء واكتشف مجموعتنا الفاخرة من الإكسسوارات.",
+    hours: "يومياً: 04:00 PM - 01:00 AM",
+    image_url: "https://strapi.viariyadh.com/uploads/Freddyhcreator_05_06_2023_MANUH_CIGARS_370_5921d7fc84_12bc6ee06b.webp",
+    tag: "متاح حالياً",
+    booking_url: "https://www.sevenrooms.com/reservations/manuhcigarloungeriyadh/via-riyadh-website",
+    floor: "الطابق الأرضي السفلي",
+    phone: "+966114516483"
+  },
+  {
+    name: "ماديو",
+    cuisine: "مطاعم راقية - إيطالي",
+    description: "ماديو مطعم إيطالي راقٍ يقدم أشهى الأطباق في أجواء دافئة وأنيقة. تجربة طعام استثنائية لا تُنسى.",
+    hours: "الأحد: عشاء 06:00 PM - 11:00 PM | الاثنين - الخميس: 02:00 PM - 11:00 PM | الجمعة - السبت: 01:00 PM - 12:00 AM",
+    image_url: "https://strapi.viariyadh.com/uploads/madeo_riyadh_tiramisu_1_5ed4e7a16e.png",
+    tag: "متاح حالياً",
+    booking_url: "https://www.sevenrooms.com/experiences/madeo/la-dolce-vita-5193332877312000?tracking=via-riyadh-website",
+    floor: "الطابق الأرضي",
+    phone: "+966114516483"
+  },
+  {
+    name: "مطعم جاكي",
+    cuisine: "كاجوال - أمريكي يوناني",
+    description: "مطعمنا المميز المستوحى من الفن الرفيع في عصره، يمزج بين التأثيرات الأمريكية واليونانية في قائمة تعرض دقيق الاهتمام بالتفاصيل.",
+    hours: "الصباح: 06:30 - 11:00 | بعد الظهر: 12:00 - 16:00 | المساء: 16:00 - 23:00",
+    image_url: "https://strapi.viariyadh.com/uploads/Jackie_RUHXR_1118_386f06ec7c.jpg",
+    tag: "",
+    phone: "+966 11 5089444"
+  },
+  {
+    name: "هوتشو",
+    cuisine: "مطبخ آسيوي",
+    description: "تجربة آسيوية فريدة في قلب ڤيا رياض. أطباق مستوحاة من أرقى المطابخ الآسيوية بلمسة عصرية.",
+    hours: "يومياً: 12:00 PM - 12:00 AM",
+    image_url: "https://strapi.viariyadh.com/uploads/W_Q09291_0d860059f3.JPG",
+    tag: "",
+    booking_url: "#"
   },
 ];
 
@@ -103,7 +170,7 @@ export default function Dine() {
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {[
               { icon: <UtensilsCrossed className="w-8 h-8 text-primary mx-auto mb-3" />, label: "٢٠+ مطعم", desc: "تجارب طهو متنوعة" },
-              { icon: <Star className="w-8 h-8 text-primary mx-auto mb-3" />, label: "مستوى عالمي", desc: "شيفات من حول العالم" },
+              { icon: <UtensilsCrossed className="w-8 h-8 text-primary mx-auto mb-3" />, label: "مستوى عالمي", desc: "شيفات من حول العالم" },
               { icon: <Clock className="w-8 h-8 text-primary mx-auto mb-3" />, label: "مفتوح يومياً", desc: "من الظهيرة حتى منتصف الليل" },
             ].map((item, i) => (
               <AnimatedElement key={i} delay={i * 100}>
@@ -132,7 +199,7 @@ export default function Dine() {
               </h2>
               <div className="w-12 h-px bg-primary mt-4" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {restaurants.map((r, i) => (
                 <AnimatedElement key={i} delay={i * 100}>
                   <div className="group relative overflow-hidden bg-card hover:-translate-y-2 hover:shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.3)] transition-all duration-500">
@@ -146,23 +213,20 @@ export default function Dine() {
                       )}
                     </div>
                     <div className="p-6">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-card-foreground text-xl font-bold" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>{r.name}</h3>
-                        <div className="flex gap-0.5">
-                          {Array.from({ length: r.rating }).map((_, j) => (
-                            <Star key={j} className="w-3 h-3 fill-primary text-primary" />
-                          ))}
-                        </div>
-                      </div>
-                      <span className="text-primary text-xs tracking-wider uppercase block mb-3">{r.cuisine}</span>
+                      <h3 className="text-card-foreground text-xl font-bold mb-1" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>{r.name}</h3>
+                      <span className="text-primary text-xs tracking-wider block mb-3">{r.cuisine}</span>
                       <p className="text-card-foreground/70 text-sm mb-4 leading-relaxed">{r.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-card-foreground/60 text-xs flex items-center gap-1"><Clock className="w-3 h-3" />{r.hours}</span>
-                        <a href="#" className="text-primary text-sm border border-primary/40 px-4 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all duration-300 flex items-center gap-2">
+                      <div className="space-y-1 mb-4">
+                        <span className="text-card-foreground/60 text-xs flex items-center gap-1"><Clock className="w-3 h-3 shrink-0" /><span>{r.hours}</span></span>
+                        {r.floor && <span className="text-card-foreground/60 text-xs flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" />{r.floor}</span>}
+                        {r.phone && <span className="text-card-foreground/60 text-xs flex items-center gap-1"><Phone className="w-3 h-3 shrink-0" />{r.phone}</span>}
+                      </div>
+                      {r.booking_url && (
+                        <a href={r.booking_url} target="_blank" rel="noopener noreferrer" className="text-primary text-sm border border-primary/40 px-4 py-1.5 hover:bg-primary hover:text-primary-foreground transition-all duration-300 inline-flex items-center gap-2">
                           <span>احجز الآن</span>
                           <ArrowLeft className="w-3 h-3" />
                         </a>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </AnimatedElement>
