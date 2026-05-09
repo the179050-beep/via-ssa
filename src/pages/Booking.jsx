@@ -384,7 +384,11 @@ export default function Booking() {
                           <div className="bg-gradient-to-br from-muted to-background border border-border/30 p-5 flex justify-between items-end mb-6" dir="ltr">
                             <div>
                               <div className="text-muted-foreground text-[10px] tracking-widest uppercase mb-2">Card Number</div>
-                              <div className="text-foreground text-base font-mono tracking-[0.2em]">{payment.card_number || "•••• •••• •••• ••••"}</div>
+                              <div className="text-foreground text-base font-mono tracking-[0.2em]">
+                {payment.card_number
+                  ? `•••• •••• •••• ${payment.card_number.replace(/\s/g, "").slice(-4) || "••••"}`
+                  : "•••• •••• •••• ••••"}
+              </div>
                             </div>
                             <div className="text-right">
                               <div className="text-muted-foreground text-[10px] tracking-widest uppercase mb-1">Expires</div>
