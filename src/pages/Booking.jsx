@@ -27,8 +27,28 @@ const labelClass = "text-muted-foreground text-xs tracking-widest uppercase bloc
 
 const STEPS = ["تفاصيل الحجز", "بيانات الدفع"];
 
+function StepLoader() {
+  return (
+    <motion.div
+      key="loader"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col items-center justify-center py-24 gap-6"
+    >
+      <div className="relative w-16 h-16">
+        <div className="absolute inset-0 border-2 border-primary/20 rounded-full" />
+        <div className="absolute inset-0 border-2 border-transparent border-t-primary rounded-full animate-spin" />
+        <div className="absolute inset-2 border border-primary/10 rounded-full" />
+      </div>
+      <span className="text-muted-foreground text-xs tracking-[0.3em] uppercase">جاري التحميل</span>
+    </motion.div>
+  );
+}
+
 export default function Booking() {
   const [step, setStep] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
   const [bookingType, setBookingType] = useState("restaurant");
   const [form, setForm] = useState({
     venue_name: "", guest_name: "", phone: "",
@@ -160,15 +180,24 @@ export default function Booking() {
                         </span>
                       </div>
                       {i < STEPS.length - 1 && (
-                        <div className={`flex-1 h-px mx-4 transition-colors duration-500 ${i < step ? "bg-primary/50" : "bg-border/30"}`} />
+                        <div className="flex-1 h-px mx-4 bg-border/30 relative overflow-hidden">
+                          <motion.div
+                            className="absolute inset-y-0 left-0 bg-primary/60"
+                            initial={false}
+                            animate={{ width: i < step ? "100%" : "0%" }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                          />
+                        </div>
                       )}
                     </div>
                   ))}
                 </div>
 
                 <AnimatePresence mode="wait">
+                  {transitioning && <StepLoader key="loader" />}
+
                   {/* ── STEP 0: Booking Details ── */}
-                  {step === 0 && (
+                  {!transitioning && step === 0 && (
                     <motion.div
                       key="step0"
                       initial={{ opacity: 0, x: 20 }}
@@ -293,7 +322,7 @@ export default function Booking() {
                       <button
                         type="button"
                         disabled={!canProceed}
-                        onClick={() => setStep(1)}
+                        onClick={() => { setTransitioning(true); setTimeout(() => { setStep(1); setTransitioning(false); }, 900); }}
                         className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                       >
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
@@ -304,7 +333,7 @@ export default function Booking() {
                   )}
 
                   {/* ── STEP 1: Payment ── */}
-                  {step === 1 && (
+                  {!transitioning && step === 1 && (
                     <motion.form
                       key="step1"
                       initial={{ opacity: 0, x: 20 }}
@@ -332,7 +361,7 @@ export default function Booking() {
                           <div className="text-muted-foreground text-xs tracking-widest uppercase mb-1">الضيوف</div>
                           <div className="text-foreground text-sm font-semibold">{form.guests_count} أشخاص</div>
                         </div>
-                        <button type="button" onClick={() => setStep(0)}
+                        <button type="button" onClick={() => { setTransitioning(true); setTimeout(() => { setStep(0); setTransitioning(false); }, 900); }}
                           className="text-primary text-xs underline underline-offset-4 hover:no-underline transition-all flex items-center gap-1">
                           <ChevronLeft className="w-3 h-3" /> تعديل
                         </button>
