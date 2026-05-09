@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Calendar, Clock, Users, Phone, Mail, User, CheckCircle, Hotel, ChevronDown } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Users, Phone, Mail, User, CheckCircle, Hotel, ChevronDown, CreditCard, Lock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 
@@ -31,6 +31,8 @@ export default function Booking() {
     guests_count: 2,
     notes: "",
   });
+  const [payment, setPayment] = useState({ card_name: "", card_number: "", expiry: "", cvv: "" });
+  const setP = (k, v) => setPayment(p => ({ ...p, [k]: v }));
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -273,6 +275,98 @@ export default function Booking() {
                       placeholder="مناسبة خاصة، طلبات غذائية، ..."
                       className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors resize-none placeholder:text-muted-foreground/50"
                     />
+                  </div>
+                </div>
+
+                {/* Payment Section */}
+                <div className="bg-secondary border border-border/30 p-8 space-y-5">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-foreground font-bold text-base flex items-center gap-2" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
+                      <CreditCard className="w-4 h-4 text-primary" />
+                      بيانات الدفع
+                    </h3>
+                    <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                      <Lock className="w-3 h-3" /> مدفوعات آمنة ومشفرة
+                    </span>
+                  </div>
+
+                  {/* Card holder name */}
+                  <div>
+                    <label className="text-foreground text-sm font-semibold block mb-2">اسم حامل البطاقة</label>
+                    <input
+                      required
+                      type="text"
+                      value={payment.card_name}
+                      onChange={e => setP("card_name", e.target.value)}
+                      placeholder="MOHAMMED AL-OMARI"
+                      className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50 uppercase"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* Card number */}
+                  <div>
+                    <label className="text-foreground text-sm font-semibold block mb-2">رقم البطاقة</label>
+                    <div className="relative">
+                      <input
+                        required
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={19}
+                        value={payment.card_number}
+                        onChange={e => {
+                          const v = e.target.value.replace(/\D/g, "").slice(0, 16);
+                          setP("card_number", v.replace(/(.{4})/g, "$1 ").trim());
+                        }}
+                        placeholder="0000 0000 0000 0000"
+                        className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50 pr-12"
+                        dir="ltr"
+                      />
+                      <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  {/* Expiry + CVV */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-foreground text-sm font-semibold block mb-2">تاريخ الانتهاء</label>
+                      <input
+                        required
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={5}
+                        value={payment.expiry}
+                        onChange={e => {
+                          let v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          if (v.length > 2) v = v.slice(0, 2) + "/" + v.slice(2);
+                          setP("expiry", v);
+                        }}
+                        placeholder="MM/YY"
+                        className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-foreground text-sm font-semibold block mb-2">CVV</label>
+                      <input
+                        required
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={payment.cvv}
+                        onChange={e => setP("cvv", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        placeholder="•••"
+                        className="w-full bg-muted border border-border/40 text-foreground px-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/50"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card logos */}
+                  <div className="flex items-center gap-3 pt-1">
+                    {["VISA", "MC", "AMEX", "MADA"].map(brand => (
+                      <span key={brand} className="border border-border/40 text-muted-foreground text-[10px] font-bold px-2 py-1 tracking-wider">{brand}</span>
+                    ))}
                   </div>
                 </div>
 
