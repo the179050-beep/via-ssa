@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Calendar, Clock, Users, Phone, Mail, User,
   CheckCircle, Hotel, ChevronDown, CreditCard, Lock, ChevronLeft,
-  RefreshCw
+  RefreshCw, Film
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
@@ -11,6 +11,17 @@ import { Link } from "react-router-dom";
 const restaurants = [
   "اوڤر اندر", "بيرنجاك", "جيم خانا", "ستيلا سكاي لاونج",
   "سدس", "فيردي", "فيقا سيجار لاونج", "ماديو", "مطعم جاكي", "هوتشو"
+];
+
+const cinemaMovies = [
+  "Mortal Kombat 2", "The Devil Wears Prada 2", "مايكل", "الكلام على إيه (أول ليلة)",
+  "برشامة", "هوكم", "The Sheep Detectives", "Deep Water",
+  "سوبر ماريو جالاكسي، الفيلم", "شباب البومب 3"
+];
+
+const cinemaTimeSlots = [
+  "10:00 AM", "12:30 PM", "03:00 PM", "05:30 PM",
+  "08:00 PM", "10:30 PM", "01:00 AM",
 ];
 
 const timeSlots = [
@@ -90,7 +101,8 @@ function OtpInput({ value, onChange, hasError }) {
 export default function Booking() {
   const [step, setStep] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [bookingType, setBookingType] = useState("restaurant");
+  const urlParams = new URLSearchParams(window.location.search);
+  const [bookingType, setBookingType] = useState(urlParams.get("type") || "restaurant");
   const [form, setForm] = useState({
     venue_name: "", guest_name: "", phone: "",
     email: "", date: "", time: "", guests_count: 2, notes: "",
@@ -237,13 +249,14 @@ export default function Booking() {
                   {/* ── STEP 0: Booking Details ── */}
                   {!transitioning && step === 0 && (
                     <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }} className="space-y-6">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         {[
                           { value: "restaurant", label: "حجز مطعم", icon: <UtensilsCrossed className="w-5 h-5" /> },
                           { value: "hotel", label: "حجز فندق", icon: <Hotel className="w-5 h-5" /> },
+                          { value: "cinema", label: "حجز سينما", icon: <Film className="w-5 h-5" /> },
                         ].map(opt => (
                           <button key={opt.value} type="button"
-                            onClick={() => { setBookingType(opt.value); setF("venue_name", ""); }}
+                            onClick={() => { setBookingType(opt.value); setF("venue_name", ""); setF("time", ""); }}
                             className={`flex items-center justify-center gap-3 py-5 border transition-all duration-300 text-sm tracking-wide ${
                               bookingType === opt.value ? "border-primary bg-primary/8 text-primary" : "border-border/30 text-muted-foreground hover:border-primary/40 hover:text-foreground"
                             }`}>
@@ -262,6 +275,15 @@ export default function Booking() {
                                 className={inputClass + " appearance-none"}>
                                 <option value="">اختر المطعم</option>
                                 {restaurants.map(r => <option key={r} value={r}>{r}</option>)}
+                              </select>
+                              <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            </div>
+                          ) : bookingType === "cinema" ? (
+                            <div className="relative">
+                              <select required value={form.venue_name} onChange={e => setF("venue_name", e.target.value)}
+                                className={inputClass + " appearance-none"}>
+                                <option value="">اختر الفيلم</option>
+                                {cinemaMovies.map(m => <option key={m} value={m}>{m}</option>)}
                               </select>
                               <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                             </div>
@@ -308,7 +330,7 @@ export default function Booking() {
                                 <select required value={form.time} onChange={e => setF("time", e.target.value)}
                                   className={inputClass + " appearance-none"} dir="ltr">
                                   <option value="">الوقت</option>
-                                  {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                                  {(bookingType === "cinema" ? cinemaTimeSlots : timeSlots).map(t => <option key={t} value={t}>{t}</option>)}
                                 </select>
                                 <ChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                               </div>

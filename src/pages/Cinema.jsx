@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, ExternalLink, Film } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const AnimatedElement = ({ children, className, delay = 0 }) => {
   const ref = useRef(null);
@@ -99,6 +99,7 @@ const movies = [
 ];
 
 export default function Cinema() {
+  const navigate = useNavigate();
   return (
     <div className="bg-background text-foreground min-h-screen" dir="rtl">
 
@@ -157,15 +158,13 @@ export default function Cinema() {
                 </h2>
                 <div className="w-12 h-px bg-primary mt-4" />
               </div>
-              <a
-                href="https://ksa.voxcinemas.com/ar/movies/whatson"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/Booking?type=cinema"
                 className="hidden md:flex items-center gap-2 text-primary text-xs tracking-widest uppercase border border-primary/40 px-5 py-2.5 hover:bg-primary hover:text-primary-foreground transition-all duration-300"
               >
-                <span>عرض الكل</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+                <span>احجز تذاكرك</span>
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </AnimatedElement>
 
@@ -173,9 +172,8 @@ export default function Cinema() {
             {movies.map((movie, i) => (
               <AnimatedElement key={i} delay={i * 60}>
                 <a
-                  href={`https://ksa.voxcinemas.com/ar/movies/${movie.slug}#showtimes`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="#"
+                  onClick={e => { e.preventDefault(); navigate(`/Booking?type=cinema`); }}
                   className="group block"
                 >
                   <div className="relative overflow-hidden aspect-[2/3] bg-secondary mb-3">
@@ -208,15 +206,13 @@ export default function Cinema() {
 
           <AnimatedElement delay={200}>
             <div className="text-center mt-12">
-              <a
-                href="https://ksa.voxcinemas.com/ar/movies/whatson"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/Booking?type=cinema"
                 className="inline-flex items-center gap-3 border border-primary/40 text-primary px-8 py-3.5 text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-all duration-300"
               >
-                <span>عرض جميع الأفلام</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
+                <span>احجز تذاكرك الآن</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
             </div>
           </AnimatedElement>
         </div>
@@ -230,15 +226,13 @@ export default function Cinema() {
             استمتع بتجربة سينمائية استثنائية
           </h2>
           <p className="text-muted-foreground mb-8">من IMAX إلى صالات VIP الفاخرة، عش كل لحظة بأسلوب لا مثيل له</p>
-          <a
-            href="https://ksa.voxcinemas.com/ar"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/Booking?type=cinema"
             className="inline-flex items-center gap-3 bg-primary text-primary-foreground px-8 py-4 text-xs tracking-widest uppercase hover:opacity-90 transition-opacity"
           >
             <span>احجز تذاكرك الآن</span>
             <ArrowLeft className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </section>
 
