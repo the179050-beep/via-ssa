@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Users, CalendarCheck, UserCheck, Clock } from "lucide-react";
+import { CalendarCheck, UserCheck, Clock, Users, Wifi } from "lucide-react";
 
-export default function DashboardStats() {
+export default function DashboardStats({ activeTab }) {
   const [bookings, setBookings] = useState([]);
   const [visitors, setVisitors] = useState([]);
 
@@ -15,27 +15,37 @@ export default function DashboardStats() {
   const pending = bookings.filter(b => b.status === "pending").length;
   const online = visitors.filter(v => v.online_status === "online").length;
 
-  const stats = [
-    { label: "إجمالي الحجوزات", value: bookings.length, icon: <CalendarCheck className="w-5 h-5" />, color: "text-primary", bg: "bg-primary/10" },
-    { label: "مؤكدة", value: confirmed, icon: <UserCheck className="w-5 h-5" />, color: "text-green-400", bg: "bg-green-400/10" },
-    { label: "قيد الانتظار", value: pending, icon: <Clock className="w-5 h-5" />, color: "text-yellow-400", bg: "bg-yellow-400/10" },
-    { label: "الزوار", value: visitors.length, icon: <Users className="w-5 h-5" />, color: "text-blue-400", bg: "bg-blue-400/10" },
-    { label: "متصلون الآن", value: online, icon: <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />, color: "text-green-400", bg: "bg-green-400/10" },
+  const allStats = [
+    { label: "إجمالي الحجوزات", value: bookings.length, icon: CalendarCheck, color: "#116dff", bg: "#eff5ff", show: ["overview", "bookings"] },
+    { label: "مؤكدة", value: confirmed, icon: UserCheck, color: "#00b341", bg: "#edfaf3", show: ["overview", "bookings"] },
+    { label: "قيد الانتظار", value: pending, icon: Clock, color: "#f59e0b", bg: "#fffbeb", show: ["overview", "bookings"] },
+    { label: "إجمالي الزوار", value: visitors.length, icon: Users, color: "#8b5cf6", bg: "#f3f0ff", show: ["overview", "visitors"] },
+    { label: "متصلون الآن", value: online, icon: Wifi, color: "#00b341", bg: "#edfaf3", show: ["overview", "visitors"] },
   ];
 
+  const stats = allStats.filter(s => !activeTab || s.show.includes(activeTab));
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-      {stats.map((s, i) => (
-        <div key={i} className="bg-[#161616] border border-white/8 rounded-2xl p-5 flex flex-col gap-3 hover:border-white/15 transition-colors">
-          <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center ${s.color}`}>
-            {s.icon}
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {stats.map((s, i) => {
+        const Icon = s.icon;
+        return (
+          <div key={i} className="bg-white rounded-2xl border border-[#e8e8e8] p-5 flex flex-col gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: s.bg }}>
+                <Icon className="w-5 h-5" style={{ color: s.color }} />
+              </div>
+              <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ color: s.color, backgroundColor: s.bg }}>
+                {i === 4 ? "مباشر" : "الكل"}
+              </span>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-[#17191c]">{s.value}</div>
+              <div className="text-[#6b7280] text-xs mt-0.5">{s.label}</div>
+            </div>
           </div>
-          <div>
-            <div className={`text-3xl font-bold ${s.color}`}>{s.value}</div>
-            <div className="text-white/40 text-xs mt-1">{s.label}</div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
