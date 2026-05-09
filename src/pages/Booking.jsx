@@ -120,6 +120,7 @@ export default function Booking() {
   const setP = (k, v) => setPayment(p => ({ ...p, [k]: v }));
 
   const goTo = (s) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setTransitioning(true);
     setTimeout(() => { setStep(s); setTransitioning(false); }, 800);
   };
