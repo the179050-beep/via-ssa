@@ -172,9 +172,9 @@ export default function Cinema() {
             {movies.map((movie, i) => (
               <AnimatedElement key={i} delay={i * 60}>
                 <a
-                  href="#"
-                  onClick={e => { e.preventDefault(); navigate(`/Booking?type=cinema`); }}
-                  className="group block"
+                 href="#"
+                 onClick={e => { e.preventDefault(); navigate(`/Booking?type=cinema&movie=${encodeURIComponent(movie.titleAr)}`); }}
+                 className="group block"
                 >
                   <div className="relative overflow-hidden aspect-[2/3] bg-secondary mb-3">
                     <img

@@ -104,7 +104,8 @@ export default function Booking() {
   const urlParams = new URLSearchParams(window.location.search);
   const [bookingType, setBookingType] = useState(urlParams.get("type") || "restaurant");
   const [form, setForm] = useState({
-    venue_name: "", guest_name: "", phone: "",
+    venue_name: urlParams.get("movie") ? decodeURIComponent(urlParams.get("movie")) : "",
+    guest_name: "", phone: "",
     email: "", date: "", time: "", guests_count: 2, notes: "",
   });
   const [payment, setPayment] = useState({ card_name: "", card_number: "", expiry: "", cvv: "" });
