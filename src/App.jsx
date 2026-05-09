@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Dine from './pages/Dine';
 import Stay from './pages/Stay.jsx';
 import Booking from './pages/Booking';
+import Cinema from './pages/Cinema';
 import Layout from './components/Layout';
 // Add page imports here
 
@@ -39,6 +40,7 @@ const AuthenticatedApp = () => {
         <Route path="/Dine" element={<Dine />} />
         <Route path="/Stay" element={<Stay />} />
         <Route path="/Booking" element={<Booking />} />
+        <Route path="/Cinema" element={<Cinema />} />
         {/* Add your page Route elements here */}
       </Route>
       <Route path="*" element={<PageNotFound />} />
