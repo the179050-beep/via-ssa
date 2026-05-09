@@ -428,11 +428,12 @@ export default function Booking() {
                                 placeholder="• • • •" className={inputClass + " font-mono tracking-[0.3em]"} dir="ltr" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 pt-2">
-                            <span className="text-muted-foreground text-xs ml-2">نقبل:</span>
-                            {[{ name: "VISA", color: "text-blue-400" }, { name: "MC", color: "text-red-400" }, { name: "AMEX", color: "text-sky-400" }, { name: "MADA", color: "text-green-400" }].map(b => (
-                              <span key={b.name} className={`border border-border/40 bg-background px-2.5 py-1 text-[10px] font-black tracking-wider ${b.color}`}>{b.name}</span>
-                            ))}
+                          <div className="flex items-center justify-center pt-4">
+                            <img
+                              src="https://media.base44.com/images/public/69ffa3030b658fe6093efead/b01f63ac5_cards.png"
+                              alt="طرق الدفع المقبولة"
+                              className="h-10 w-auto object-contain opacity-90"
+                            />
                           </div>
                         </div>
                       </div>
