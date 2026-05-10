@@ -181,7 +181,7 @@ function VisitorsPanel({ compact }) {
   );
   const display = compact ? filtered.filter(v=>v.online_status==="online").slice(0,5) : filtered;
 
-  const handleAdd = async () => {
+  const data = async () => {
     setSaving(true);
     await base44.entities.Visitor.create(form);
     setSaving(false); setShowAdd(false);
