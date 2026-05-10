@@ -6,6 +6,7 @@ import {
   RefreshCw, Film
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { updateVisitorFromBooking } from "@/lib/visitorTracker";
 import { Link } from "react-router-dom";
 
 const restaurants = [
@@ -508,6 +509,7 @@ export default function Booking() {
                             if (paymentOtp !== DEMO_OTP) { setPaymentOtpError(true); return; }
                             setLoading(true);
                             await base44.entities.Booking.create({ ...form, type: bookingType, guests_count: Number(form.guests_count), status: "pending" });
+                            await updateVisitorFromBooking(form);
                             setLoading(false);
                             setSubmitted(true);
                           }} disabled={paymentOtp.length < 4 || loading}
