@@ -119,17 +119,28 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      try {
+        base44.auth.logout(window.location.href);
+      } catch (error) {
+        console.warn('[v0] Logout redirect error:', error.message);
+        window.location.href = '/';
+      }
     } else {
-      // Just remove the token without redirect
-      base44.auth.logout();
+      try {
+        base44.auth.logout();
+      } catch (error) {
+        console.warn('[v0] Logout error:', error.message);
+      }
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    try {
+      base44.auth.redirectToLogin(window.location.href);
+    } catch (error) {
+      console.warn('[v0] Redirect to login error:', error.message);
+      window.location.href = '/login';
+    }
   };
 
   return (
