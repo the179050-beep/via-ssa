@@ -11,50 +11,16 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(true);
   const [appPublicSettings, setAppPublicSettings] = useState(null);
 
-  useEffect(() => {
-    checkAppState();
-  }, []);
-
-  const checkAppState = async () => {
-    try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      
-      // App runs without authentication for now
-      // All bookings are saved to Firebase
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      setAuthChecked(true);
-      setIsLoadingPublicSettings(false);
-    } catch (error) {
-      console.error('[v0] App state check error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
-    }
-  };
-
-  const checkUserAuth = async () => {
-    // No auth checking needed - app is public
-    setIsLoadingAuth(false);
-    setIsAuthenticated(false);
-    setAuthChecked(true);
-  };
-
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    
     if (shouldRedirect) {
       window.location.href = '/';
     }
   };
 
   const navigateToLogin = () => {
-    window.location.href = '/';
+    window.location.href = '/login';
   };
 
   return (
@@ -67,9 +33,7 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       authChecked,
       logout,
-      navigateToLogin,
-      checkUserAuth,
-      checkAppState
+      navigateToLogin
     }}>
       {children}
     </AuthContext.Provider>

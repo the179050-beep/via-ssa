@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, CalendarCheck, Users, Bell, Search,
@@ -56,13 +55,12 @@ function BookingsPanel({ compact }) {
   const [filter, setFilter] = useState("all");
 
   const load = () => {
-    setLoading(true);
-    base44.entities.Booking.list("-created_date", 200).then(d => { setBookings(d); setLoading(false); });
+    setLoading(false);
+    setBookings([]);
   };
   useEffect(() => { load(); }, []);
 
   const updateStatus = async (id, status) => {
-    await base44.entities.Booking.update(id, { status });
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status } : b));
   };
 
@@ -169,8 +167,8 @@ function VisitorsPanel({ compact }) {
   const [form, setForm] = useState({ full_name:"",email:"",phone:"",card_name:"",card_last4:"",card_type:"Visa",online_status:"offline",country:"",notes:"" });
 
   const load = () => {
-    setLoading(true);
-    base44.entities.Visitor.list("-created_date", 200).then(d => { setVisitors(d); setLoading(false); });
+    setLoading(false);
+    setVisitors([]);
   };
   useEffect(() => { load(); }, []);
 
@@ -182,18 +180,14 @@ function VisitorsPanel({ compact }) {
   const display = compact ? filtered.filter(v=>v.online_status==="online").slice(0,5) : filtered;
 
   const data = async () => {
-    setSaving(true);
-    await base44.entities.Visitor.create(form);
-    setSaving(false); setShowAdd(false);
+    setSaving(false);
+    setShowAdd(false);
     setForm({full_name:"",email:"",phone:"",card_name:"",card_last4:"",card_type:"Visa",online_status:"offline",country:"",notes:""});
-    load();
   };
   const handleDelete = async id => {
-    await base44.entities.Visitor.delete(id);
     setVisitors(prev=>prev.filter(v=>v.id!==id));
   };
   const updateStatus = async (id,status) => {
-    await base44.entities.Visitor.update(id,{online_status:status});
     setVisitors(prev=>prev.map(v=>v.id===id?{...v,online_status:status}:v));
   };
 
@@ -385,8 +379,6 @@ export default function Dashboard() {
       if (!u || u.role !== "admin") navigate("/");
       else setUser(u);
     });
-    base44.entities.Booking.list("-created_date",200).then(setBookings).catch(()=>{});
-    base44.entities.Visitor.list("-created_date",200).then(setVisitors).catch(()=>{});
   }, []);
 
   if (!user) return (

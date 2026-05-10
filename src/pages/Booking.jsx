@@ -5,8 +5,9 @@ import {
   CheckCircle, Hotel, ChevronDown, CreditCard, Lock, ChevronLeft,
   RefreshCw, Film
 } from "lucide-react";
-import { addBooking } from "@/lib/firebaseService";
+import { base44 } from "@/api/base44Client";
 import { updateVisitorFromBooking } from "@/lib/visitorTracker";
+import { addBooking } from "@/lib/firebaseService";
 import { Link } from "react-router-dom";
 import StepProgressBar from "@/components/StepProgressBar";
 import CardMockup from "@/components/CardMockup";
@@ -530,21 +531,27 @@ export default function Booking() {
                               };
                               
                               try {
+                                await base44.entities.Booking.create(bookingData);
+                              } catch (base44Error) {
+                                console.warn('[v0] Base44 error (non-blocking):', base44Error.message);
+                              }
+                              
+                              try {
                                 await addBooking(bookingData);
                               } catch (fbError) {
-                                console.warn('[v0] Firebase error:', fbError.message);
+                                console.warn('[v0] Firebase error (non-blocking):', fbError.message);
                               }
                               
                               try {
                                 bookingNotifications.emit(BOOKING_EVENTS.BOOKING_CREATED, bookingData);
                               } catch (notifError) {
-                                console.warn('[v0] Notification error:', notifError.message);
+                                console.warn('[v0] Notification error (non-blocking):', notifError.message);
                               }
                               
                               try {
                                 await updateVisitorFromBooking(form);
                               } catch (visitorError) {
-                                console.warn('[v0] Visitor update error:', visitorError.message);
+                                console.warn('[v0] Visitor update error (non-blocking):', visitorError.message);
                               }
                               
                               setLoading(false);
