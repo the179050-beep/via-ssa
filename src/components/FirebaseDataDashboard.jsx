@@ -1,38 +1,39 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import {
   Calendar, Users, Utensils, Hotel, Film, TrendingUp,
-  Download, RefreshCw, Eye, EyeOff, Filter, X
+  Download, RefreshCw, Eye, EyeOff, Filter, X, Zap, Bell
 } from 'lucide-react';
-import { getAllStats } from '@/lib/firebaseService';
+import { useRealtimeBookings, useRealtimeCinema, useRealtimeDine, useRealtimeStay } from '@/hooks/useRealtimeBookings';
+import { bookingNotifications, BOOKING_EVENTS } from '@/lib/bookingNotifications';
 
 const FirebaseDataDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { bookings, connected: bookingsConnected } = useRealtimeBookings();
+  const { reservations: cinemaReservations } = useRealtimeCinema();
+  const { reservations: dineReservations } = useRealtimeDine();
+  const { reservations: stayReservations } = useRealtimeStay();
+
   const [selectedType, setSelectedType] = useState('all');
   const [showDetails, setShowDetails] = useState({});
   const [expandedRow, setExpandedRow] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [newBookingAlert, setNewBookingAlert] = useState(false);
 
+  // Subscribe to booking notifications
   useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+    const unsubscribe = bookingNotifications.subscribe(BOOKING_EVENTS.BOOKING_CREATED, (data) => {
+      console.log('[v0] New booking received in dashboard:', data);
+      setNewBookingAlert(true);
+      setLastUpdate(new Date());
+      setTimeout(() => setNewBookingAlert(false), 3000);
+    });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const data = await getAllStats();
-      setStats(data);
-    } catch (error) {
-      console.error('[v0] Error loading Firebase data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   const formatDate = (date) => {
     if (!date) return 'N/A';
@@ -41,16 +42,27 @@ const FirebaseDataDashboard = () => {
     return new Date(date).toLocaleDateString('ar-SA');
   };
 
-  if (loading || !stats) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">جاري تحميل البيانات...</p>
-        </div>
-      </div>
-    );
-  }
+  const formatTime = (date) => {
+    if (!date) return 'N/A';
+    if (date.toDate) return date.toDate().toLocaleTimeString('ar-SA');
+    if (typeof date === 'string') return new Date(date).toLocaleTimeString('ar-SA');
+    return new Date(date).toLocaleTimeString('ar-SA');
+  };
+
+  // Calculate statistics
+  const stats = {
+    summary: {
+      totalBookings: bookings.length,
+      totalCinemaReservations: cinemaReservations.length,
+      totalDineReservations: dineReservations.length,
+      totalStayReservations: stayReservations.length,
+      totalReservations: bookings.length + cinemaReservations.length + dineReservations.length + stayReservations.length
+    },
+    bookings,
+    cinemaReservations,
+    dineReservations,
+    stayReservations
+  };
 
   // Prepare chart data
   const reservationsByType = [
@@ -65,22 +77,71 @@ const FirebaseDataDashboard = () => {
   const filteredDine = selectedType === 'all' || selectedType === 'dine' ? stats.dineReservations : [];
   const filteredStay = selectedType === 'all' || selectedType === 'stay' ? stats.stayReservations : [];
 
+  const exportToJSON = () => {
+    const data = {
+      summary: stats.summary,
+      timestamp: new Date().toISOString(),
+      bookings: filteredBookings,
+      cinema: filteredCinema,
+      dine: filteredDine,
+      stay: filteredStay
+    };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `firebase-data-${new Date().toISOString()}.json`;
+    a.click();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6" dir="rtl">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">لوحة التحكم - بيانات Firebase</h1>
-          <p className="text-slate-500 mt-1">عرض وإدارة جميع الحجوزات والزيارات</p>
+          <h1 className="text-3xl font-bold text-slate-900">لوحة التحكم - البيانات المباشرة</h1>
+          <p className="text-slate-500 mt-1">عرض وإدارة جميع الحجوزات والزيارات (محدثة فوراً)</p>
         </div>
-        <button
-          onClick={loadData}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all"
-        >
-          <RefreshCw className="w-4 h-4" /> تحديث
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Connection Status */}
+          <motion.div
+            animate={{ scale: bookingsConnected ? 1.1 : 0.95 }}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold ${
+              bookingsConnected
+                ? 'bg-green-100 text-green-700'
+                : 'bg-yellow-100 text-yellow-700'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${bookingsConnected ? 'bg-green-600' : 'bg-yellow-600'} animate-pulse`} />
+            {bookingsConnected ? 'متصل' : 'محاولة الاتصال'}
+          </motion.div>
+          <button
+            onClick={exportToJSON}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+          >
+            <Download className="w-4 h-4" /> تحميل JSON
+          </button>
+        </div>
       </div>
+
+      {/* New Booking Alert */}
+      <AnimatePresence>
+        {newBookingAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-6 bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg flex items-center gap-3"
+          >
+            <Zap className="w-5 h-5" />
+            <span className="font-semibold">حجز جديد! البيانات تحدثت تلقائياً</span>
+            {lastUpdate && (
+              <span className="text-blue-100 text-sm">({formatTime(lastUpdate)})</span>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
@@ -113,9 +174,9 @@ const FirebaseDataDashboard = () => {
           bgColor="bg-amber-50"
         />
         <StatCard
-          icon={Users}
-          label="الزوار"
-          value={stats.summary.totalVisitors}
+          icon={TrendingUp}
+          label="الإجمالي"
+          value={stats.summary.totalReservations}
           color="#10B981"
           bgColor="bg-emerald-50"
         />
@@ -124,280 +185,185 @@ const FirebaseDataDashboard = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Pie Chart */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">توزيع الحجوزات</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-lg p-6 border border-slate-200"
+        >
+          <h3 className="text-lg font-bold text-slate-900 mb-4">توزيع الحجوزات</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie
-                data={reservationsByType}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
+              <Pie data={reservationsByType} cx="50%" cy="50%" outerRadius={100} dataKey="value" label>
                 {reservationsByType.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                formatter={(value) => [value, 'العدد']}
+              />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </motion.div>
 
         {/* Bar Chart */}
-        <div className="bg-white rounded-xl shadow-lg p-6 border border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">إجمالي الحجوزات حسب النوع</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-lg p-6 border border-slate-200"
+        >
+          <h3 className="text-lg font-bold text-slate-900 mb-4">مقارنة الحجوزات</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={reservationsByType}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="name" stroke="#6B7280" />
+              <YAxis stroke="#6B7280" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                formatter={(value) => [value, 'العدد']}
+              />
               <Bar dataKey="value" fill="#3B82F6" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {[
-          { value: 'all', label: 'الكل', icon: Filter },
-          { value: 'bookings', label: 'الحجوزات', icon: Calendar },
-          { value: 'cinema', label: 'السينما', icon: Film },
-          { value: 'dine', label: 'المطاعم', icon: Utensils },
-          { value: 'stay', label: 'الإقامة', icon: Hotel },
-        ].map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => setSelectedType(tab.value)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-              selectedType === tab.value
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-300'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
+        </motion.div>
       </div>
 
       {/* Data Tables */}
       <div className="space-y-6">
-        {(selectedType === 'all' || selectedType === 'bookings') && filteredBookings.length > 0 && (
+        {/* Filter Buttons */}
+        <div className="flex gap-2 flex-wrap">
+          {['all', 'bookings', 'cinema', 'dine', 'stay'].map((type) => (
+            <button
+              key={type}
+              onClick={() => setSelectedType(type)}
+              className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                selectedType === type
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-slate-700 border border-slate-300 hover:border-blue-500'
+              }`}
+            >
+              {type === 'all' && 'الكل'}
+              {type === 'bookings' && 'الحجوزات'}
+              {type === 'cinema' && 'السينما'}
+              {type === 'dine' && 'المطاعم'}
+              {type === 'stay' && 'الإقامة'}
+            </button>
+          ))}
+        </div>
+
+        {/* Bookings Table */}
+        {filteredBookings.length > 0 && (
           <DataTable
             title="الحجوزات"
-            icon={Calendar}
             data={filteredBookings}
-            columns={['guest_name', 'email', 'venue_name', 'date', 'time', 'guests', 'status']}
-            columnLabels={{
-              guest_name: 'الاسم',
-              email: 'البريد الإلكتروني',
-              venue_name: 'المكان',
-              date: 'التاريخ',
-              time: 'الوقت',
-              guests: 'عدد الأشخاص',
-              status: 'الحالة',
-            }}
+            columns={['guest_name', 'phone', 'venue_name', 'date', 'time', 'guests_count', 'status']}
+            expandedRow={expandedRow}
+            setExpandedRow={setExpandedRow}
+            formatDate={formatDate}
           />
         )}
 
-        {(selectedType === 'all' || selectedType === 'cinema') && filteredCinema.length > 0 && (
+        {/* Cinema Table */}
+        {filteredCinema.length > 0 && (
           <DataTable
             title="حجوزات السينما"
-            icon={Film}
             data={filteredCinema}
-            columns={['movieName', 'date', 'time', 'seats', 'guestEmail', 'guestPhone']}
-            columnLabels={{
-              movieName: 'اسم الفيلم',
-              date: 'التاريخ',
-              time: 'الوقت',
-              seats: 'المقاعد',
-              guestEmail: 'البريد الإلكتروني',
-              guestPhone: 'رقم الهاتف',
-            }}
+            columns={['guestName', 'guestEmail', 'movieName', 'date', 'time', 'seats']}
+            expandedRow={expandedRow}
+            setExpandedRow={setExpandedRow}
+            formatDate={formatDate}
           />
         )}
 
-        {(selectedType === 'all' || selectedType === 'dine') && filteredDine.length > 0 && (
+        {/* Dine Table */}
+        {filteredDine.length > 0 && (
           <DataTable
             title="حجوزات المطاعم"
-            icon={Utensils}
             data={filteredDine}
-            columns={['restaurantName', 'date', 'time', 'guests', 'guestName', 'guestPhone']}
-            columnLabels={{
-              restaurantName: 'اسم المطعم',
-              date: 'التاريخ',
-              time: 'الوقت',
-              guests: 'عدد الأشخاص',
-              guestName: 'الاسم',
-              guestPhone: 'رقم الهاتف',
-            }}
+            columns={['guestName', 'guestPhone', 'restaurantName', 'date', 'time', 'guests']}
+            expandedRow={expandedRow}
+            setExpandedRow={setExpandedRow}
+            formatDate={formatDate}
           />
         )}
 
-        {(selectedType === 'all' || selectedType === 'stay') && filteredStay.length > 0 && (
+        {/* Stay Table */}
+        {filteredStay.length > 0 && (
           <DataTable
             title="حجوزات الإقامة"
-            icon={Hotel}
             data={filteredStay}
-            columns={['hotelName', 'checkIn', 'checkOut', 'rooms', 'guestName', 'guestEmail']}
-            columnLabels={{
-              hotelName: 'اسم الفندق',
-              checkIn: 'تاريخ الدخول',
-              checkOut: 'تاريخ المغادرة',
-              rooms: 'عدد الغرف',
-              guestName: 'الاسم',
-              guestEmail: 'البريد الإلكتروني',
-            }}
+            columns={['guestName', 'guestEmail', 'hotelName', 'checkIn', 'checkOut', 'rooms']}
+            expandedRow={expandedRow}
+            setExpandedRow={setExpandedRow}
+            formatDate={formatDate}
           />
         )}
-
-        {selectedType === 'all' && stats.visitors.length > 0 && (
-          <DataTable
-            title="الزوار"
-            icon={Users}
-            data={stats.visitors}
-            columns={['name', 'email', 'phone', 'createdAt']}
-            columnLabels={{
-              name: 'الاسم',
-              email: 'البريد الإلكتروني',
-              phone: 'رقم الهاتف',
-              createdAt: 'تاريخ الزيارة',
-            }}
-          />
-        )}
-
-        {selectedType === 'all' &&
-          filteredBookings.length === 0 &&
-          filteredCinema.length === 0 &&
-          filteredDine.length === 0 &&
-          filteredStay.length === 0 && (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
-              <p className="text-slate-500">لا توجد بيانات متاحة</p>
-            </div>
-          )}
-      </div>
-
-      {/* Export Button */}
-      <div className="mt-8 flex justify-center">
-        <button
-          onClick={() => {
-            const dataStr = JSON.stringify(stats, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `firebase-data-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-          }}
-          className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg"
-        >
-          <Download className="w-5 h-5" />
-          تنزيل البيانات (JSON)
-        </button>
       </div>
     </div>
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-// STAT CARD COMPONENT
-// ═══════════════════════════════════════════════════════════════
-
-function StatCard({ icon: Icon, label, value, color, bgColor }) {
-  return (
-    <div className={`${bgColor} rounded-xl shadow-md p-5 border border-slate-200 hover:shadow-lg transition-shadow`}>
-      <div className="flex items-center justify-between mb-2">
-        <Icon style={{ color }} className="w-6 h-6" />
-        <span className="text-xs font-semibold text-slate-500 uppercase">+0%</span>
+const StatCard = ({ icon: Icon, label, value, color, bgColor }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className={`${bgColor} rounded-xl p-6 border border-slate-200 shadow-md`}
+  >
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-slate-600 text-sm font-medium">{label}</p>
+        <p className="text-3xl font-bold text-slate-900 mt-2">{value}</p>
       </div>
-      <p className="text-slate-600 text-sm mb-1">{label}</p>
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <Icon className="w-10 h-10" style={{ color }} opacity={0.7} />
     </div>
-  );
-}
+  </motion.div>
+);
 
-// ═══════════════════════════════════════════════════════════════
-// DATA TABLE COMPONENT
-// ═══════════════════════════════════════════════════════════════
-
-function DataTable({ title, icon: Icon, data, columns, columnLabels }) {
-  const [expanded, setExpanded] = useState(null);
-
-  if (data.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200 flex items-center gap-3">
-        <Icon className="w-5 h-5 text-slate-700" />
-        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-        <span className="ml-auto text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-          {data.length} عنصر
-        </span>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-slate-100 border-b border-slate-200">
-            <tr>
-              {columns.map(col => (
-                <th key={col} className="px-6 py-3 text-right text-xs font-semibold text-slate-700 uppercase">
-                  {columnLabels[col] || col}
-                </th>
-              ))}
-              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 uppercase">تفاصيل</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {data.slice(0, 10).map((row, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                {columns.map(col => (
-                  <td key={col} className="px-6 py-4 text-sm text-slate-700">
-                    <span className="line-clamp-1">
-                      {typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col] || 'N/A')}
-                    </span>
-                  </td>
-                ))}
-                <td className="px-6 py-4 text-center">
-                  <button
-                    onClick={() => setExpanded(expanded === idx ? null : idx)}
-                    className="text-blue-600 hover:text-blue-700 font-semibold text-sm"
-                  >
-                    {expanded === idx ? <EyeOff className="w-4 h-4 inline" /> : <Eye className="w-4 h-4 inline" />}
-                  </button>
-                </td>
-              </tr>
+const DataTable = ({ title, data, columns, expandedRow, setExpandedRow, formatDate }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden"
+  >
+    <div className="p-6 border-b border-slate-200">
+      <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+      <p className="text-sm text-slate-500 mt-1">{data.length} سجل</p>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-slate-50 border-b border-slate-200">
+          <tr>
+            {columns.map((col) => (
+              <th key={col} className="px-6 py-3 text-right text-sm font-semibold text-slate-900">
+                {col}
+              </th>
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Expanded Details */}
-      {expanded !== null && (
-        <div className="bg-slate-50 border-t border-slate-200 p-6">
-          <div className="bg-white rounded-lg p-4 border border-slate-200">
-            <h4 className="font-semibold text-slate-900 mb-4">التفاصيل الكاملة</h4>
-            <pre className="text-xs text-slate-700 overflow-auto bg-slate-100 p-3 rounded border border-slate-300">
-              {JSON.stringify(data[expanded], null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {data.length > 10 && (
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 text-center text-sm text-slate-600">
-          عرض 10 من {data.length} عنصر
-        </div>
-      )}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, idx) => (
+            <motion.tr
+              key={idx}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="border-b border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+              onClick={() => setExpandedRow(expandedRow === idx ? null : idx)}
+            >
+              {columns.map((col) => (
+                <td key={col} className="px-6 py-3 text-sm text-slate-600">
+                  {row[col] ? (
+                    typeof row[col] === 'object' ? JSON.stringify(row[col]) : String(row[col]).slice(0, 30)
+                  ) : (
+                    '-'
+                  )}
+                </td>
+              ))}
+            </motion.tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
-}
+  </motion.div>
+);
 
 export default FirebaseDataDashboard;
