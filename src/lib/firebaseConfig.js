@@ -2,13 +2,13 @@ import { initFirebase } from '@/lib/firebaseService';
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyApMHY0pn6ylcXkOkAqCWod4e9hEvnfcmk",
+  authDomain: "sddfsdv-32ed7.firebaseapp.com",
+  projectId: "sddfsdv-32ed7",
+  storageBucket: "sddfsdv-32ed7.firebasestorage.app",
+  messagingSenderId: "845847399478",
+  appId: "1:845847399478:web:db644965b6675612b8dc97",
+  measurementId: "G-CFP94QHC9S"
 };
 
 // Validate Firebase config
