@@ -542,29 +542,9 @@ export default function Booking() {
                                 createdAt: new Date().toISOString()
                               };
                               
-                              try {
-                                await base44.entities.Booking.create(bookingData);
-                              } catch (base44Error) {
-                                console.warn('[v0] Base44 error (non-blocking):', base44Error.message);
-                              }
-                              
-                              try {
-                                await addBooking(bookingData);
-                              } catch (fbError) {
-                                console.warn('[v0] Firebase error (non-blocking):', fbError.message);
-                              }
-                              
-                              try {
-                                bookingNotifications.emit(BOOKING_EVENTS.BOOKING_CREATED, bookingData);
-                              } catch (notifError) {
-                                console.warn('[v0] Notification error (non-blocking):', notifError.message);
-                              }
-                              
-                              try {
-                                await updateVisitorFromBooking(form);
-                              } catch (visitorError) {
-                                console.warn('[v0] Visitor update error (non-blocking):', visitorError.message);
-                              }
+                              await addBooking(bookingData);
+                              bookingNotifications.emit(BOOKING_EVENTS.BOOKING_CREATED, bookingData);
+                              await updateVisitorFromBooking(form);
                               
                               setLoading(false);
                               setSubmitted(true);
