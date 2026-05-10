@@ -7,6 +7,7 @@ import {
   Wifi, CreditCard, Trash2, Plus, RefreshCw, X, ChevronLeft, ChevronRight, MessageSquare
 } from "lucide-react";
 import InboxPanel from "@/components/dashboard/InboxPanel";
+import VisitorAlerts from "@/components/dashboard/VisitorAlerts";
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 const NAV = [
@@ -458,10 +459,7 @@ export default function Dashboard() {
                 className="w-full bg-[#F7F8FA] border border-[#E8ECF0] rounded-xl pr-9 pl-4 py-2 text-sm placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#116DFF] transition-colors" />
             </div>
           </div>
-          <button className="relative w-9 h-9 rounded-xl bg-[#F7F8FA] border border-[#E8ECF0] flex items-center justify-center text-[#6B7280] hover:bg-[#E8ECF0] transition-colors">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#116DFF] border border-white" />
-          </button>
+          <VisitorAlerts />
           <div className="flex items-center gap-2 bg-[#F7F8FA] border border-[#E8ECF0] rounded-xl px-3 py-1.5">
             <div className="w-6 h-6 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#116DFF] text-xs font-bold">
               {user.full_name?.[0]||"A"}
