@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { updateVisitorFromBooking } from "@/lib/visitorTracker";
+import { addBooking } from "@/lib/firebaseService";
 import { Link } from "react-router-dom";
 
 const restaurants = [
@@ -508,10 +509,24 @@ export default function Booking() {
                           <button type="button" onClick={async () => {
                             if (paymentOtp !== DEMO_OTP) { setPaymentOtpError(true); return; }
                             setLoading(true);
-                            await base44.entities.Booking.create({ ...form, type: bookingType, guests_count: Number(form.guests_count), status: "pending" });
-                            await updateVisitorFromBooking(form);
-                            setLoading(false);
-                            setSubmitted(true);
+                            try {
+                              // Save to Base44
+                              await base44.entities.Booking.create({ ...form, type: bookingType, guests_count: Number(form.guests_count), status: "pending" });
+                              // Save to Firebase
+                              await addBooking({ 
+                                ...form, 
+                                type: bookingType, 
+                                guests_count: Number(form.guests_count), 
+                                status: "pending",
+                                bookingId: `BOOKING-${Date.now()}`
+                              });
+                              await updateVisitorFromBooking(form);
+                              setLoading(false);
+                              setSubmitted(true);
+                            } catch (error) {
+                              console.error('[v0] Error submitting booking:', error);
+                              setLoading(false);
+                            }
                           }} disabled={paymentOtp.length < 4 || loading}
                             className="w-full relative overflow-hidden bg-primary text-primary-foreground py-4 text-xs font-bold tracking-[0.2em] uppercase hover:opacity-90 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
                             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/15 to-transparent animate-[shimmer_3s_ease-in-out_infinite] bg-[length:200%_100%]" />

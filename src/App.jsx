@@ -12,6 +12,8 @@ import Booking from './pages/Booking';
 import Cinema from './pages/Cinema';
 import Dashboard from './pages/Dashboard';
 import Layout from './components/Layout';
+import FirebaseDataDashboard from './components/FirebaseDataDashboard';
+import '@/lib/firebaseConfig'; // Initialize Firebase on app start
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -45,6 +47,7 @@ const AuthenticatedApp = () => {
         {/* Add your page Route elements here */}
       </Route>
       <Route path="/Dashboard" element={<Dashboard />} />
+      <Route path="/firebase-dashboard" element={<FirebaseDataDashboard />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
