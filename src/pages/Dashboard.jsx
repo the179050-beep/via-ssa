@@ -4,14 +4,16 @@ import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, CalendarCheck, Users, Bell, Search,
   ChevronDown, LogOut, Menu, TrendingUp, Clock, CheckCircle,
-  Wifi, CreditCard, Trash2, Plus, RefreshCw, X, ChevronLeft, ChevronRight
+  Wifi, CreditCard, Trash2, Plus, RefreshCw, X, ChevronLeft, ChevronRight, MessageSquare
 } from "lucide-react";
+import InboxPanel from "@/components/dashboard/InboxPanel";
 
 // ─── NAV ────────────────────────────────────────────────────────────────────
 const NAV = [
   { key: "overview",  label: "نظرة عامة",     icon: LayoutDashboard },
   { key: "bookings",  label: "الحجوزات",       icon: CalendarCheck },
   { key: "visitors",  label: "الزوار",          icon: Users },
+  { key: "inbox",     label: "صندوق الوارد",   icon: MessageSquare },
 ];
 
 // ─── STATUS MAPS ─────────────────────────────────────────────────────────────
@@ -475,10 +477,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[#1A202C] text-2xl font-bold">
-                {activeTab==="overview"?"نظرة عامة":activeTab==="bookings"?"إدارة الحجوزات":"إدارة الزوار"}
+                {activeTab==="overview"?"نظرة عامة":activeTab==="bookings"?"إدارة الحجوزات":activeTab==="visitors"?"إدارة الزوار":"صندوق الوارد"}
               </h1>
               <p className="text-[#6B7280] text-sm mt-0.5">
-                {activeTab==="overview"?"مرحباً، هذه لمحة عن النشاط الحالي":activeTab==="bookings"?"عرض وإدارة جميع الحجوزات":"عرض وإدارة بيانات الزوار"}
+                {activeTab==="overview"?"مرحباً، هذه لمحة عن النشاط الحالي":activeTab==="bookings"?"عرض وإدارة جميع الحجوزات":activeTab==="visitors"?"عرض وإدارة بيانات الزوار":"رسائل وتواصل الضيوف"}
               </p>
             </div>
             <span className="text-[#A0AEC0] text-xs hidden md:block">{new Date().toLocaleDateString("ar-SA",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</span>
@@ -490,6 +492,7 @@ export default function Dashboard() {
           {/* Content */}
           {activeTab==="bookings" && <BookingsPanel />}
           {activeTab==="visitors" && <VisitorsPanel />}
+          {activeTab==="inbox" && <InboxPanel />}
           {activeTab==="overview" && (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl border border-[#E8ECF0] overflow-hidden">
