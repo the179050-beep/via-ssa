@@ -47,7 +47,7 @@ export default function Header() {
         </div>
 
         {/* Center Nav */}
-        <nav className="hidden sm:flex items-center gap-8 order-2">
+        <nav className="hidden lg:flex items-center gap-5 order-2">
           {[
             { label: "الفندق", to: "/Stay" },
             { label: "المطاعم", to: "/Dine" },
@@ -71,7 +71,7 @@ export default function Header() {
         </nav>
 
         {/* Left Actions (RTL) */}
-        <div className="hidden sm:flex items-center gap-6 order-3">
+        <div className="hidden lg:flex items-center gap-6 order-3">
           <a href="#" className="text-xs font-semibold text-foreground hover:text-primary transition-colors duration-300 tracking-widest uppercase">
             العربية
           </a>
@@ -134,7 +134,7 @@ export default function Header() {
 
         {/* Mobile Menu Toggle */}
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild className="sm:hidden order-3">
+          <SheetTrigger asChild className="lg:hidden order-3">
             <Button variant="ghost" size="icon" className="text-foreground hover:bg-transparent hover:text-primary transition-colors">
               <Menu className="w-8 h-8 stroke-[1.5]" />
             </Button>

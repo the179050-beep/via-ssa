@@ -17,7 +17,7 @@ export default function Layout() {
   }, []);
 
   return (
-    <div className="bg-background text-foreground min-h-screen" dir="rtl">
+    <div className="bg-background text-foreground min-h-screen overflow-x-hidden" dir="rtl">
       <ScrollToTop />
       <Header />
       <main>
